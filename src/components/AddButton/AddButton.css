@@ -1,0 +1,214 @@
+.add-button {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  background-color: #007AFF;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  z-index: 1002;
+  transition: all 0.2s ease;
+}
+
+.add-button:hover {
+  background-color: #0056CC;
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
+}
+
+.add-button:active {
+  transform: translateX(-50%) scale(0.95);
+}
+
+.add-button.active {
+  background-color: #0056CC;
+}
+
+.add-button svg {
+  transition: transform 0.2s ease;
+}
+
+.add-button svg.rotated {
+  transform: rotate(45deg);
+}
+
+@media (max-width: 480px) {
+  .add-button {
+    bottom: 20px;
+    width: 52px;
+    height: 52px;
+  }
+}
+
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  z-index: 1001;
+}
+
+.add-button-container {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1002;
+}
+
+.add-menu {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  margin-bottom: 12px;
+  overflow: hidden;
+  animation: slideUp 0.2s ease-out;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 12px;
+  z-index: 1003;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #000;
+  width: 100%;
+  transition: background-color 0.2s ease;
+  min-width: 120px;
+}
+
+.menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.menu-item:not(:last-child) {
+  border-bottom: 1px solid #e5e5ea;
+}
+
+.menu-icon {
+  font-size: 18px;
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exit-path-button {
+  width: 44px;
+  height: 44px;
+  background-color: #FF3B30;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+  transition: all 0.2s ease;
+  animation: slideIn 0.2s ease-out;
+}
+
+.exit-path-button:hover {
+  background-color: #D70015;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 59, 48, 0.4);
+}
+
+.exit-path-button:active {
+  transform: scale(0.95);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.menu-item-with-exit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e5ea;
+}
+
+.menu-item-with-exit:last-child {
+  border-bottom: none;
+}
+
+.menu-item-with-exit .menu-item {
+  flex: 1;
+  border-bottom: none;
+  margin: 0;
+}
+
+.exit-path-button-menu {
+  width: 32px;
+  height: 32px;
+  background-color: #FF3B30;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.exit-path-button-menu:hover {
+  background-color: #D70015;
+  transform: scale(1.05);
+}
+
+.exit-path-button-menu:active {
+  transform: scale(0.95);
+}
+
+.add-button.exit-mode {
+  background-color: #FF3B30;
+}
+
+.add-button.exit-mode:hover {
+  background-color: #D70015;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 59, 48, 0.4);
+}
