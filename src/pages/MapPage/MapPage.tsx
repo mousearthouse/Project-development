@@ -62,6 +62,45 @@ const MapPage: React.FC = () => {
             
             map.geoObjects.add(newPlacemark)
           })
+
+          const clickedCoords: number[][] = []
+
+          map.events.add('click', function (e: any) {
+            const coords = e.get('coords')
+            console.log('Координаты клика:', coords)
+
+            clickedCoords.push(coords)
+
+            const newPlacemark = new window.ymaps.Placemark(
+              coords,
+              {
+                balloonContent: `Координаты: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`
+              },
+              {
+                iconLayout: 'default#image',
+                iconImageHref: 'data:image/svg+xml;base64,' + btoa('<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="#007AFF"/></svg>'),
+                iconImageSize: [20, 20],
+                iconImageOffset: [-10, -10]
+              }
+            )
+
+            map.geoObjects.add(newPlacemark)
+
+            if (clickedCoords.length > 1) {
+              const polyline = new window.ymaps.Polyline(clickedCoords, {}, {
+                strokeColor: '#FF0000',
+                strokeWidth: 3
+              })
+
+              map.geoObjects.each((geoObj: any) => {
+                if (geoObj.geometry && geoObj.geometry.getType() === 'LineString') {
+                  map.geoObjects.remove(geoObj)
+                }
+              })
+
+              map.geoObjects.add(polyline)
+            }
+          })
         }
       })
     }
