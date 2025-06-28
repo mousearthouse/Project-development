@@ -144,7 +144,13 @@ const MapPage: React.FC = () => {
               
               if (pathCoordsRef.current.length > 1) {
                 if (currentPolylineRef.current) {
-                  mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
+                  if (Array.isArray(currentPolylineRef.current)) {
+                    currentPolylineRef.current.forEach(segment => {
+                      mapInstanceRef.current.geoObjects.remove(segment)
+                    })
+                  } else {
+                    mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
+                  }
                 }
                 
                 const segments = []
@@ -210,7 +216,13 @@ const MapPage: React.FC = () => {
     pathCoordsRef.current = []
     pathPointTypesRef.current = []
     if (currentPolylineRef.current) {
-      mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
+      if (Array.isArray(currentPolylineRef.current)) {
+        currentPolylineRef.current.forEach(segment => {
+          mapInstanceRef.current.geoObjects.remove(segment)
+        })
+      } else {
+        mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
+      }
       currentPolylineRef.current = null
     }
   }
@@ -227,7 +239,13 @@ const MapPage: React.FC = () => {
         }
       })
       
-      mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
+      if (Array.isArray(currentPolylineRef.current)) {
+        currentPolylineRef.current.forEach(segment => {
+          mapInstanceRef.current.geoObjects.remove(segment)
+        })
+      } else {
+        mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
+      }
       
       const middlePlacemark = pathPlacemarksRef.current[middleIndex]
       if (middlePlacemark) {
@@ -249,7 +267,13 @@ const MapPage: React.FC = () => {
               })
               
               if (savedPath.polyline) {
-                mapInstanceRef.current.geoObjects.add(savedPath.polyline)
+                if (Array.isArray(savedPath.polyline)) {
+                  savedPath.polyline.forEach(segment => {
+                    mapInstanceRef.current.geoObjects.add(segment)
+                  })
+                } else {
+                  mapInstanceRef.current.geoObjects.add(savedPath.polyline)
+                }
               }
               
               savedPath.isCollapsed = false
@@ -266,7 +290,13 @@ const MapPage: React.FC = () => {
                   })
                   
                   if (savedPath.polyline) {
-                    mapInstanceRef.current.geoObjects.remove(savedPath.polyline)
+                    if (Array.isArray(savedPath.polyline)) {
+                      savedPath.polyline.forEach(segment => {
+                        mapInstanceRef.current.geoObjects.remove(segment)
+                      })
+                    } else {
+                      mapInstanceRef.current.geoObjects.remove(savedPath.polyline)
+                    }
                   }
                   
                   savedPath.isCollapsed = true
