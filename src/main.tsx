@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage/LoginPage'
 import MainPage from './pages/MainPage/MainPage'
 import RegisterPage from './pages/RegisterPage/RegisterPage'
 import MapPage from './pages/MapPage/MapPage'
+import UnderConstructionPage from './pages/UnderConstructionPage/UnderConstructionPage'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/map" element={<MapPage />} />
+        <Route path="/under-construction" element={<UnderConstructionPage />} />
         <Route path="*" element={<App />} />
       </Routes>
     </BrowserRouter>

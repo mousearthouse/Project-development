@@ -113,6 +113,7 @@ const MapPage: React.FC = () => {
               console.log('Spot placed, exiting spot mode')
             }
             
+
             if (isPathMode) {
               const coords = e.get('coords')
               console.log('Adding point to path at coordinates:', coords)
