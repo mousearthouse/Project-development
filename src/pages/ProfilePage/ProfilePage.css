@@ -1,0 +1,107 @@
+.profile-wrapper {
+  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+  font-family: 'Orbitron', sans-serif;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 40px 0 24px;
+  padding: 0 20px;
+  width: 100%;
+  max-width: 500px;
+  box-sizing: border-box;
+}
+
+.profile-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 500px;
+  padding: 0 20px 40px;
+  box-sizing: border-box;
+}
+
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #007aff;
+}
+
+.profile-username {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+.profile-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+  padding: 0 20px 40px;
+  box-sizing: border-box;
+}
+
+
+.profile-button-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background-color: rgba(0, 94, 244, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.profile-button.orangey {
+  background-color: rgba(245, 142, 26, 1);
+}
+
+.profile-button:hover {
+  filter: brightness(0.9);
+}
+
+.profile-button-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.profile-button-label {
+  font-family: 'Zekton', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 100%;
+  color: #000;
+  text-align: center;
+}
