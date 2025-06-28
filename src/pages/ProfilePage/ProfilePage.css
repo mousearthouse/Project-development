@@ -105,3 +105,9 @@
   color: #000;
   text-align: center;
 }
+.bottom-highlight {
+  flex-grow: 1;
+  width: 100vw;
+  background-color: #E8E8E8;
+
+}

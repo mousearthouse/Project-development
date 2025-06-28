@@ -9,6 +9,7 @@ import favoritesIcon from '../../assets/favorites.svg'
 const ProfilePage: React.FC = () => {
   return (
     <div className="profile-wrapper">
+        
            <Link to="/" className="back-button">
             <img src={vectorIcon} alt="Back" style={{ width: '24px', height: '24px', transform: 'rotate(90deg)' }} />
           </Link>
@@ -46,7 +47,7 @@ const ProfilePage: React.FC = () => {
   </div>
 </div>
 
-
+<div className="bottom-highlight"></div>
     </div>
   )
 }
