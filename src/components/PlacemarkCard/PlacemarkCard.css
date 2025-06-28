@@ -9,7 +9,7 @@
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   font-family: system-ui, -apple-system, sans-serif;
-  z-index: 1000;
+  z-index: 1005;
   overflow: hidden;
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);

@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import type { MouseEvent } from 'react'
 import './OrangeButton.css'
+import badRoadIcon from '../../assets/bad_road.svg'
+import stairsIcon from '../../assets/stares.svg'
+import dotIcon from '../../assets/dot.svg'
 
 export const PointType = {
   BAD_ROAD: 'bad_road',
@@ -18,9 +21,9 @@ const OrangeButton: React.FC<OrangeButtonProps> = ({ onClick }) => {
   const [currentPointType, setCurrentPointType] = useState<PointType>(PointType.NORMAL)
 
   const pointTypes = [
-    { type: PointType.BAD_ROAD, letter: 'B', name: 'Плохая дорога' },
-    { type: PointType.STAIRS, letter: 'S', name: 'Лестница' },
-    { type: PointType.NORMAL, letter: 'N', name: 'Обычная точка' }
+    { type: PointType.BAD_ROAD, icon: badRoadIcon, name: 'Плохая дорога' },
+    { type: PointType.STAIRS, icon: stairsIcon, name: 'Лестница' },
+    { type: PointType.NORMAL, icon: dotIcon, name: 'Обычная точка' }
   ]
 
   const getCurrentPoint = () => {
@@ -45,7 +48,7 @@ const OrangeButton: React.FC<OrangeButtonProps> = ({ onClick }) => {
 
   return (
     <button className={`orange-button point-type-${currentPoint.type}`} onClick={handleClick}>
-      <span className="point-letter">{currentPoint.letter}</span>
+      <img src={currentPoint.icon} alt={currentPoint.name} className="point-icon" />
     </button>
   )
 }

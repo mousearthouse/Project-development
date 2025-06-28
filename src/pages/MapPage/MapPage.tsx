@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import './MapPage.css'
 import vectorIcon from '../../assets/vector.svg'
 import dotIcon from '../../assets/dot.svg'
+import spotIcon from '../../assets/spot.svg'
+import badRoadIcon from '../../assets/bad_road.svg'
+import stairsIcon from '../../assets/stares.svg'
 import ShutterComponent from '../../components/ShutterComponent/ShutterComponent'
 import PlacemarkCard from '../../components/PlacemarkCard/PlacemarkCard'
 import AddButton from '../../components/AddButton/AddButton'
@@ -22,6 +25,7 @@ const MapPage: React.FC = () => {
   const pathCoordsRef = useRef<number[][]>([])
   const currentPolylineRef = useRef<any>(null)
   const pathPlacemarksRef = useRef<any[]>([])
+  const pathPointTypesRef = useRef<PointTypeType[]>([])
   const savedPathsRef = useRef<{coords: number[][], polyline: any, placemarks: any[], isCollapsed: boolean, firstPlacemark?: any}[]>([])
   const [selectedPlace, setSelectedPlace] = useState<{title: string, address: string} | null>(null)
   const [isSpotMode, setIsSpotMode] = useState<boolean>(false)
@@ -95,9 +99,9 @@ const MapPage: React.FC = () => {
                 balloonContent: `Координаты: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`
               }, {
                 iconLayout: 'default#image',
-                iconImageHref: dotIcon,
-                iconImageSize: [30, 30],
-                iconImageOffset: [-15, -20]
+                iconImageHref: spotIcon,
+                iconImageSize: [50, 50],
+                iconImageOffset: [-25, -50]
               })
               
               newPlacemark.events.add('click', function() {
@@ -119,6 +123,7 @@ const MapPage: React.FC = () => {
               console.log('Adding point to path at coordinates:', coords)
               
               pathCoordsRef.current.push(coords)
+              pathPointTypesRef.current.push(currentPointType)
               
               const newPlacemark = new window.ymaps.Placemark(coords, {
                 balloonContent: `Точка пути`,
@@ -126,57 +131,11 @@ const MapPage: React.FC = () => {
               }, {
                 iconLayout: 'default#image',
                 iconImageHref: createPointIcon(currentPointType),
-                iconImageSize: [32, 32],
-                iconImageOffset: [-16, -16]
+                iconImageSize: [40, 40],
+                iconImageOffset: [-20, -40]
               })
               
               newPlacemark.events.add('click', function() {
-                console.log('Path point clicked')
-                
-                if (isPathMode) {
-                  const confirmDelete = window.confirm('Удалить эту точку пути?')
-                  
-                  if (confirmDelete) {
-                    mapInstanceRef.current.geoObjects.remove(newPlacemark)
-                    
-                    const coordIndex = pathCoordsRef.current.findIndex(coord => 
-                      Math.abs(coord[0] - coords[0]) < 0.0001 && Math.abs(coord[1] - coords[1]) < 0.0001
-                    )
-                    if (coordIndex !== -1) {
-                      pathCoordsRef.current.splice(coordIndex, 1)
-                    }
-                    
-                    const placemarkIndex = pathPlacemarksRef.current.indexOf(newPlacemark)
-                    if (placemarkIndex !== -1) {
-                      pathPlacemarksRef.current.splice(placemarkIndex, 1)
-                    }
-                    
-                    if (currentPolylineRef.current) {
-                      mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
-                      currentPolylineRef.current = null
-                    }
-                    
-                    if (pathCoordsRef.current.length > 1) {
-                      const polyline = new window.ymaps.Polyline(pathCoordsRef.current, {
-                        hintContent: 'Маршрут'
-                      }, {
-                        strokeColor: '#FF0000',
-                        strokeWidth: 3,
-                        strokeOpacity: 0.8,
-                        zIndex: 100
-                      })
-                      
-                      currentPolylineRef.current = polyline
-                      mapInstanceRef.current.geoObjects.add(polyline)
-                    }
-                    
-                    console.log('Point deleted from path')
-                  } else {
-                    console.log('Point deletion cancelled')
-                  }
-                  return
-                }
-                
                 console.log('Path point clicked but not in path mode - no action')
               })
               
@@ -188,17 +147,32 @@ const MapPage: React.FC = () => {
                   mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
                 }
                 
-                const polyline = new window.ymaps.Polyline(pathCoordsRef.current, {
-                  hintContent: 'Маршрут'
-                }, {
-                  strokeColor: '#FF0000',
-                  strokeWidth: 3,
-                  strokeOpacity: 0.8,
-                  zIndex: 100
-                })
+                const segments = []
+                for (let i = 0; i < pathCoordsRef.current.length - 1; i++) {
+                  const startType = pathPointTypesRef.current[i]
+                  const endType = pathPointTypesRef.current[i + 1]
+                  const segmentCoords = [pathCoordsRef.current[i], pathCoordsRef.current[i + 1]]
+                  
+                  const color = (startType === PointType.BAD_ROAD && endType === PointType.BAD_ROAD) 
+                    ? '#FF9500' 
+                    : (startType === PointType.STAIRS && endType === PointType.STAIRS)
+                    ? '#555555'
+                    : '#0080FF'
+                  
+                  const segment = new window.ymaps.Polyline(segmentCoords, {
+                    hintContent: 'Маршрут'
+                  }, {
+                    strokeColor: color,
+                    strokeWidth: 3,
+                    strokeOpacity: 0.8,
+                    zIndex: 100
+                  })
+                  
+                  segments.push(segment)
+                  mapInstanceRef.current.geoObjects.add(segment)
+                }
                 
-                currentPolylineRef.current = polyline
-                mapInstanceRef.current.geoObjects.add(polyline)
+                currentPolylineRef.current = segments
               }
             }
           } catch (error) {
@@ -234,6 +208,7 @@ const MapPage: React.FC = () => {
     setIsPathMode(true)
     setIsSpotMode(false)
     pathCoordsRef.current = []
+    pathPointTypesRef.current = []
     if (currentPolylineRef.current) {
       mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
       currentPolylineRef.current = null
@@ -324,6 +299,7 @@ const MapPage: React.FC = () => {
     setIsPathMode(false)
     pathCoordsRef.current = []
     pathPlacemarksRef.current = []
+    pathPointTypesRef.current = []
     currentPolylineRef.current = null
   }
 
@@ -339,24 +315,19 @@ const MapPage: React.FC = () => {
   }
 
   const createPointIcon = (pointType: PointTypeType): string => {
-    const colors = {
-      [PointType.BAD_ROAD]: '#FF3B30',
-      [PointType.STAIRS]: '#007AFF',
-      [PointType.NORMAL]: '#34C759'
+    if (pointType === PointType.BAD_ROAD) {
+      return badRoadIcon
     }
     
-    const letters = {
-      [PointType.BAD_ROAD]: 'B',
-      [PointType.STAIRS]: 'S',
-      [PointType.NORMAL]: 'N'
+    if (pointType === PointType.STAIRS) {
+      return stairsIcon
     }
-
-    return 'data:image/svg+xml;base64,' + btoa(`
-      <svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="16" r="14" fill="${colors[pointType]}" stroke="#FFFFFF" stroke-width="2"/>
-        <text x="16" y="22" text-anchor="middle" fill="white" font-size="16" font-weight="bold" font-family="Arial">${letters[pointType]}</text>
-      </svg>
-    `)
+    
+    if (pointType === PointType.NORMAL) {
+      return dotIcon
+    }
+    
+    return dotIcon
   }
 
   const handleOrangeButtonClick = (pointType: PointTypeType): void => {
@@ -384,8 +355,8 @@ const MapPage: React.FC = () => {
       }, {
         iconLayout: 'default#image',
         iconImageHref: createPointIcon(currentPointType),
-        iconImageSize: [32, 32],
-        iconImageOffset: [-16, -16]
+        iconImageSize: [40, 40],
+        iconImageOffset: [-20, -20]
       })
       
       newPlacemark.events.add('click', function() {
@@ -430,7 +401,7 @@ const MapPage: React.FC = () => {
         const coords = geoObject.geometry.getCoordinates()
         const iconHref = geoObject.options.get('iconImageHref')
         
-        if (iconHref === dotIcon) {
+        if (iconHref === spotIcon) {
           allSpots.push(coords)
         }
       }
