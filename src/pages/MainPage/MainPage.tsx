@@ -4,22 +4,18 @@ import React, { useEffect } from 'react';
 
 const MainPage = () => {
     useEffect(() => {
-
-        
-
         const fetchProfile = async () => {
             try {
                 const response = await getUserProfile();
                 console.log(response.data);
-
             } catch (err) {
                 console.log('Ошибка при получении профиля');
             }
         };
 
         fetchProfile();
-    }, [])
-    
+    }, []);
+
     return (
         <main>
             <div>
@@ -28,6 +24,6 @@ const MainPage = () => {
             </div>
         </main>
     );
-}
+};
 
 export default MainPage;

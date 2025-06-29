@@ -5,9 +5,7 @@ import {
     RouterProvider,
 } from 'react-router-dom';
 
-import {
-    MainPage
-} from '@/pages/imports';
+import { MainPage } from '@/pages/imports';
 
 import { Layout } from '@/components/Layout';
 
@@ -18,7 +16,7 @@ const router = createBrowserRouter(
         <Route element={<Layout />}>
             <Route path={ROUTES.MAINPAGE} element={<MainPage />} />
         </Route>,
-    )
-)
+    ),
+);
 
 export const Router = () => <RouterProvider router={router} />;
