@@ -54,7 +54,6 @@ const MapPage: React.FC = () => {
       setShowError(true)
     }
 
-    // Listen for network errors
     const handleOnlineStatus = () => {
       if (!navigator.onLine) {
         setShowError(true)
