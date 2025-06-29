@@ -1,12 +1,16 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import type { FormEvent, ChangeEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import './LoginPage.css'
 import vectorIcon from '../../assets/vector.svg'
+import { postUserLogin } from '@/utils/api/requests/loginUser'
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState<string>('')
-  const [password, setPassword] = useState<string>('')
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+
+  const navigate = useNavigate();
+
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault()
@@ -20,6 +24,23 @@ const LoginPage: React.FC = () => {
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setPassword(e.target.value)
   }
+
+  const loginUser = async() => {
+    try{
+      const response = await postUserLogin({
+        params: { username: email, password: password},
+        config: {},
+      })
+      console.log(response),
+      
+      localStorage.setItem('token', response.data.accessToken);
+      localStorage.setItem('refresh_token', response.data.refreshToken);
+      navigate("/");
+    }
+    catch (error) {
+      console.error(error)
+    }
+  };
 
   return (
     <div className="login-container">
@@ -66,7 +87,7 @@ const LoginPage: React.FC = () => {
             </a>
           </div>
 
-          <button type="submit" className="login-button">
+          <button type="submit" onClick={loginUser} className="login-button">
             Войти
           </button>
 
