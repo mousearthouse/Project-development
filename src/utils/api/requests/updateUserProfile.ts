@@ -4,6 +4,7 @@ export interface UpdateProfileRequest {
   email?: string
   username?: string
   phoneNumber?: string
+      avatarId?:string
 }
 
 export interface UpdateProfileResponse {
@@ -11,6 +12,7 @@ export interface UpdateProfileResponse {
   username?: string
   email?: string
   phoneNumber?: string
+    avatarId?:string
 }
 
 export const updateUserProfile = async (data: UpdateProfileRequest) => {

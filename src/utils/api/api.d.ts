@@ -17,5 +17,17 @@ interface ProfileDto {
   id: string;
   username?: string;
   email?: string;
-  proneNumber?: string;
+  phoneNumber?: string;
+}
+
+interface Spot {
+  id: string;
+  latitude: number;
+  longitude: number;
+  createDate: string;
+  authorId: string;
+  rating: number;
+  name?: string;
+  description?: string;
+  fileId?: string;
 }
