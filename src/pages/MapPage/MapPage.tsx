@@ -677,7 +677,20 @@ const MapPage: React.FC = () => {
         setShowRoadForm(false);
         setPendingRoadData(null);
 
-        // Exit path mode without creating road
+        pathPlacemarksRef.current.forEach(placemark => {
+            mapInstanceRef.current.geoObjects.remove(placemark);
+        });
+
+        if (currentPolylineRef.current) {
+            if (Array.isArray(currentPolylineRef.current)) {
+                currentPolylineRef.current.forEach(segment => {
+                    mapInstanceRef.current.geoObjects.remove(segment);
+                });
+            } else {
+                mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current);
+            }
+        }
+
         setIsPathMode(false);
         pathCoordsRef.current = [];
         pathPlacemarksRef.current = [];
