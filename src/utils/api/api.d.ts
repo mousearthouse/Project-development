@@ -17,5 +17,6 @@ interface ProfileDto {
   id: string;
   username?: string;
   email?: string;
-  proneNumber?: string;
+  phoneNumber?: string;
+  fileId?: string;
 }
