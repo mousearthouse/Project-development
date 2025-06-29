@@ -4,36 +4,32 @@ import React, { useEffect } from 'react';
 
 const MainPage = () => {
     useEffect(() => {
-        const loginUser = async() => {
+        const loginAndFetchProfile = async() => {
             try{
                 const response = await postUserLogin({
                     params: { username: "testuser", password: "string123" },
                     config: {},
                 })
-                console.log(response),
+                console.log(response);
                 
                 localStorage.setItem('token', response.data.accessToken);
                 localStorage.setItem('refresh_token', response.data.refreshToken);
+
+                try {
+                    const profileResponse = await getUserProfile();
+                    console.log(profileResponse.data);
+                } catch (err) {
+                    console.log('Ошибка при получении профиля');
+                }
             }
             catch (error) {
                 console.error(error)
             }
         }
-        
 
-        const fetchProfile = async () => {
-            try {
-                const response = await getUserProfile();
-                console.log(response.data);
-
-            } catch (err) {
-                console.log('Ошибка при получении профиля');
-            }
-        };
-
-        loginUser();
-        fetchProfile();
+        loginAndFetchProfile();
     }, [])
+    
     return (
         <main>
             <div>
