@@ -60,6 +60,14 @@
   border-radius: 12px;
 }
 
+.header-buttons {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+}
+
 .close-button {
   position: absolute;
   top: 12px;
@@ -96,6 +104,26 @@
 
 .close-button::after {
   transform: rotate(-45deg);
+}
+
+.flag-button {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  color: #007AFF;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.flag-button:hover {
+  background-color: rgba(255, 255, 255, 1);
+  color: #0056CC;
 }
 
 .card-content {
@@ -208,5 +236,11 @@
   font-size: 14px;
   color: #666;
   line-height: 1.4;
+}
+
+.flag-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 

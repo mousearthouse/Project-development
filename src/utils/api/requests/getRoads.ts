@@ -13,6 +13,9 @@ export interface Road {
   id: string;
   authorId: string;
   rating: number;
+  name?: string;
+  description?: string;
+  fileId?: string;
   points: RoadPoint[];
 }
 

@@ -16,6 +16,7 @@ import { getSpots, type Spot } from '../../utils/api/requests/getSpots'
 import { createRoad, type CreateRoadPointDto } from '../../utils/api/requests/createRoad'
 import { getRoads, type Road, type RoadPoint } from '../../utils/api/requests/getRoads'
 import SpotCreationForm, { type SpotFormData } from '../../components/SpotCreationForm/SpotCreationForm'
+import RoadCreationForm, { type RoadFormData } from '../../components/RoadCreationForm/RoadCreationForm'
 
 declare global {
   interface Window {
@@ -32,7 +33,7 @@ const MapPage: React.FC = () => {
   const pathPlacemarksRef = useRef<any[]>([])
   const pathPointTypesRef = useRef<PointTypeType[]>([])
   const savedPathsRef = useRef<{coords: number[][], polyline: any, placemarks: any[], isCollapsed: boolean, firstPlacemark?: any}[]>([])
-  const [selectedPlace, setSelectedPlace] = useState<{title: string, address: string, spotId?: string, description?: string, fileId?: string} | null>(null)
+  const [selectedPlace, setSelectedPlace] = useState<{title: string, address: string, spotId?: string, roadId?: string, description?: string, fileId?: string} | null>(null)
   const [isSpotMode, setIsSpotMode] = useState<boolean>(false)
   const [isPathMode, setIsPathMode] = useState<boolean>(false)
   const [spotPlaced, setSpotPlaced] = useState<boolean>(false)
@@ -40,6 +41,8 @@ const MapPage: React.FC = () => {
   const [currentPointType, setCurrentPointType] = useState<PointTypeType>(PointType.NORMAL)
   const [showSpotForm, setShowSpotForm] = useState<boolean>(false)
   const [pendingSpotCoords, setPendingSpotCoords] = useState<number[] | null>(null)
+  const [showRoadForm, setShowRoadForm] = useState<boolean>(false)
+  const [pendingRoadData, setPendingRoadData] = useState<CreateRoadPointDto[] | null>(null)
 
   useEffect(() => {
     try {
@@ -277,6 +280,15 @@ const MapPage: React.FC = () => {
             const expandHandler = function() {
               console.log('Expanding collapsed road')
               
+              // Show PlacemarkCard with road information
+              setSelectedPlace({
+                title: road.name || 'Дорога',
+                address: `Рейтинг: ${road.rating}/5 • ${road.points.length} точек`,
+                roadId: road.id,
+                description: road.description || 'Описание отсутствует',
+                fileId: road.fileId
+              })
+              
               placemarks.forEach(placemark => {
                 mapInstanceRef.current.geoObjects.add(placemark)
               })
@@ -289,6 +301,9 @@ const MapPage: React.FC = () => {
                 placemark.events.remove('click')
                 const collapseHandler = function() {
                   console.log('Collapsing expanded road')
+                  
+                  // Close PlacemarkCard when collapsing
+                  setSelectedPlace(null)
                   
                   placemarks.forEach((pm, index) => {
                     if (index !== middleIndex) {
@@ -373,116 +388,20 @@ const MapPage: React.FC = () => {
     console.log('Exiting path mode')
     
     if (currentPolylineRef.current && pathCoordsRef.current.length > 1) {
-      try {
-        const points: CreateRoadPointDto[] = pathCoordsRef.current.map((coords, index) => ({
-          latitude: coords[0],
-          longitude: coords[1],
-          type: pathPointTypesRef.current[index] === PointType.BAD_ROAD ? 'Bad' : 
-                pathPointTypesRef.current[index] === PointType.STAIRS ? 'Stairs' : 'Normal'
-        }))
+      // Convert point types to API format
+      const points: CreateRoadPointDto[] = pathCoordsRef.current.map((coords, index) => ({
+        latitude: coords[0],
+        longitude: coords[1],
+        type: pathPointTypesRef.current[index] === PointType.BAD_ROAD ? 'Bad' : 
+              pathPointTypesRef.current[index] === PointType.STAIRS ? 'Stairs' : 'Normal'
+      }))
 
-        await createRoad({
-          rating: 5,
-          points: points
-        })
-        console.log('Road created successfully')
-      } catch (error) {
-        console.error('Error creating road:', error)
-      }
-
-      const middleIndex = Math.floor(pathPlacemarksRef.current.length / 2)
+      // Show form instead of immediately creating road
+      setPendingRoadData(points)
+      setShowRoadForm(true)
       
-      pathPlacemarksRef.current.forEach((placemark, index) => {
-        if (index !== middleIndex) {
-          mapInstanceRef.current.geoObjects.remove(placemark)
-        }
-      })
-      
-      if (Array.isArray(currentPolylineRef.current)) {
-        currentPolylineRef.current.forEach(segment => {
-          mapInstanceRef.current.geoObjects.remove(segment)
-        })
-      } else {
-        mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
-      }
-      
-      const middlePlacemark = pathPlacemarksRef.current[middleIndex]
-      if (middlePlacemark) {
-        middlePlacemark.events.remove('click')
-        
-        const expandHandler = function() {
-          console.log('Expanding collapsed path')
-          
-          const pathIndex = savedPathsRef.current.findIndex(savedPath => 
-            savedPath.firstPlacemark === middlePlacemark
-          )
-          
-          if (pathIndex !== -1) {
-            const savedPath = savedPathsRef.current[pathIndex]
-            
-            if (savedPath.isCollapsed) {
-              savedPath.placemarks.forEach(placemark => {
-                mapInstanceRef.current.geoObjects.add(placemark)
-              })
-              
-              if (savedPath.polyline) {
-                if (Array.isArray(savedPath.polyline)) {
-                  savedPath.polyline.forEach(segment => {
-                    mapInstanceRef.current.geoObjects.add(segment)
-                  })
-                } else {
-                  mapInstanceRef.current.geoObjects.add(savedPath.polyline)
-                }
-              }
-              
-              savedPath.isCollapsed = false
-              
-              savedPath.placemarks.forEach(placemark => {
-                placemark.events.remove('click')
-                const collapseHandler = function() {
-                  console.log('Collapsing expanded path')
-                  
-                  savedPath.placemarks.forEach((pm, index) => {
-                    if (index !== middleIndex) {
-                      mapInstanceRef.current.geoObjects.remove(pm)
-                    }
-                  })
-                  
-                  if (savedPath.polyline) {
-                    if (Array.isArray(savedPath.polyline)) {
-                      savedPath.polyline.forEach(segment => {
-                        mapInstanceRef.current.geoObjects.remove(segment)
-                      })
-                    } else {
-                      mapInstanceRef.current.geoObjects.remove(savedPath.polyline)
-                    }
-                  }
-                  
-                  savedPath.isCollapsed = true
-                  
-                  if (savedPath.firstPlacemark) {
-                    savedPath.firstPlacemark.events.remove('click')
-                    savedPath.firstPlacemark.events.add('click', expandHandler)
-                  }
-                }
-                placemark.events.add('click', collapseHandler)
-              })
-            }
-          }
-        }
-        
-        middlePlacemark.events.add('click', expandHandler)
-      }
-      
-      savedPathsRef.current.push({
-        coords: [...pathCoordsRef.current],
-        polyline: currentPolylineRef.current,
-        placemarks: [...pathPlacemarksRef.current],
-        isCollapsed: true,
-        firstPlacemark: middlePlacemark
-      })
-      
-      console.log('Saved path with', pathCoordsRef.current.length, 'points (collapsed to middle point)')
+      // Don't continue with the rest of the function yet
+      return
     }
     
     setIsPathMode(false)
@@ -544,6 +463,145 @@ const MapPage: React.FC = () => {
   const handleSpotFormCancel = () => {
     setShowSpotForm(false)
     setPendingSpotCoords(null)
+  }
+
+  const handleRoadFormSubmit = async (formData: RoadFormData) => {
+    if (!pendingRoadData) return
+    
+    try {
+      await createRoad({
+        points: pendingRoadData,
+        ...formData
+      })
+      console.log('Road created successfully')
+      
+      // Continue with the original exit path mode logic
+      const middleIndex = Math.floor(pathPlacemarksRef.current.length / 2)
+      
+      pathPlacemarksRef.current.forEach((placemark, index) => {
+        if (index !== middleIndex) {
+          mapInstanceRef.current.geoObjects.remove(placemark)
+        }
+      })
+      
+      if (Array.isArray(currentPolylineRef.current)) {
+        currentPolylineRef.current.forEach(segment => {
+          mapInstanceRef.current.geoObjects.remove(segment)
+        })
+      } else {
+        mapInstanceRef.current.geoObjects.remove(currentPolylineRef.current)
+      }
+      
+      const middlePlacemark = pathPlacemarksRef.current[middleIndex]
+      if (middlePlacemark) {
+        middlePlacemark.events.remove('click')
+        
+        const expandHandler = function() {
+          console.log('Expanding collapsed path')
+          
+          // Show PlacemarkCard with road information
+          setSelectedPlace({
+            title: formData.name || 'Дорога',
+            address: `Рейтинг: ${formData.rating}/5 • ${pendingRoadData.length} точек`,
+            description: formData.description || 'Описание отсутствует',
+            fileId: formData.fileId
+          })
+          
+          const pathIndex = savedPathsRef.current.findIndex(savedPath => 
+            savedPath.firstPlacemark === middlePlacemark
+          )
+          
+          if (pathIndex !== -1) {
+            const savedPath = savedPathsRef.current[pathIndex]
+            
+            if (savedPath.isCollapsed) {
+              savedPath.placemarks.forEach(placemark => {
+                mapInstanceRef.current.geoObjects.add(placemark)
+              })
+              
+              if (savedPath.polyline) {
+                if (Array.isArray(savedPath.polyline)) {
+                  savedPath.polyline.forEach(segment => {
+                    mapInstanceRef.current.geoObjects.add(segment)
+                  })
+                } else {
+                  mapInstanceRef.current.geoObjects.add(savedPath.polyline)
+                }
+              }
+              
+              savedPath.isCollapsed = false
+              
+              savedPath.placemarks.forEach(placemark => {
+                placemark.events.remove('click')
+                const collapseHandler = function() {
+                  console.log('Collapsing expanded path')
+                  
+                  // Close PlacemarkCard when collapsing
+                  setSelectedPlace(null)
+                  
+                  savedPath.placemarks.forEach((pm, index) => {
+                    if (index !== middleIndex) {
+                      mapInstanceRef.current.geoObjects.remove(pm)
+                    }
+                  })
+                  
+                  if (savedPath.polyline) {
+                    if (Array.isArray(savedPath.polyline)) {
+                      savedPath.polyline.forEach(segment => {
+                        mapInstanceRef.current.geoObjects.remove(segment)
+                      })
+                    } else {
+                      mapInstanceRef.current.geoObjects.remove(savedPath.polyline)
+                    }
+                  }
+                  
+                  savedPath.isCollapsed = true
+                  
+                  if (savedPath.firstPlacemark) {
+                    savedPath.firstPlacemark.events.remove('click')
+                    savedPath.firstPlacemark.events.add('click', expandHandler)
+                  }
+                }
+                placemark.events.add('click', collapseHandler)
+              })
+            }
+          }
+        }
+        
+        middlePlacemark.events.add('click', expandHandler)
+      }
+      
+      savedPathsRef.current.push({
+        coords: [...pathCoordsRef.current],
+        polyline: currentPolylineRef.current,
+        placemarks: [...pathPlacemarksRef.current],
+        isCollapsed: true,
+        firstPlacemark: middlePlacemark
+      })
+      
+    } catch (error) {
+      console.error('Error creating road:', error)
+    } finally {
+      setShowRoadForm(false)
+      setPendingRoadData(null)
+      setIsPathMode(false)
+      pathCoordsRef.current = []
+      pathPlacemarksRef.current = []
+      pathPointTypesRef.current = []
+      currentPolylineRef.current = null
+    }
+  }
+
+  const handleRoadFormCancel = () => {
+    setShowRoadForm(false)
+    setPendingRoadData(null)
+    
+    // Exit path mode without creating road
+    setIsPathMode(false)
+    pathCoordsRef.current = []
+    pathPlacemarksRef.current = []
+    pathPointTypesRef.current = []
+    currentPolylineRef.current = null
   }
 
   const createPointIcon = (pointType: PointTypeType): string => {
@@ -704,6 +762,7 @@ const MapPage: React.FC = () => {
           title={selectedPlace.title}
           address={selectedPlace.address}
           spotId={selectedPlace.spotId}
+          roadId={selectedPlace.roadId}
           description={selectedPlace.description}
           fileId={selectedPlace.fileId}
           onClose={handleCloseCard}
@@ -713,6 +772,12 @@ const MapPage: React.FC = () => {
         <SpotCreationForm
           onSubmit={handleSpotFormSubmit}
           onCancel={handleSpotFormCancel}
+        />
+      )}
+      {showRoadForm && (
+        <RoadCreationForm
+          onSubmit={handleRoadFormSubmit}
+          onCancel={handleRoadFormCancel}
         />
       )}
     </div>

@@ -4,17 +4,20 @@ import './PlacemarkCard.css'
 import { rateSpot } from '../../utils/api/requests/rateSpot'
 import { getSpots } from '../../utils/api/requests/getSpots'
 import { getFileUrl } from '../../utils/api/requests/getFile'
+import filledFlagIcon from '../../assets/filled-flag-24.png'
+import { deleteRoad } from '../../utils/api/requests/deleteRoad'
 
 interface PlacemarkCardProps {
   title: string;
   address: string;
   spotId?: string;
+  roadId?: string;
   description?: string;
   fileId?: string;
   onClose?: () => void;
 }
 
-const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, description, fileId, onClose }) => {
+const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, roadId, description, fileId, onClose }) => {
   const [rating, setRating] = useState<number>(0)
   const [currentRating, setCurrentRating] = useState<number>(0)
   const [isVisible, setIsVisible] = useState<boolean>(false)
@@ -83,6 +86,22 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, d
     setIsExpanded(!isExpanded)
   }
 
+  const handleFlagClick = async () => {
+    if (roadId) {
+      try {
+        await deleteRoad(roadId)
+        console.log('Жалоба отправлена')
+        if (onClose) {
+          onClose()
+        }
+      } catch (error) {
+        console.error('Error deleting road:', error)
+      }
+    } else {
+      console.log('Flag clicked - no road ID available')
+    }
+  }
+
   return (
     <div 
       className={`placemark-card ${isVisible ? 'visible' : ''} ${isExpanded ? 'expanded' : ''}`}
@@ -102,6 +121,11 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, d
           ) : (
             <div className="image-placeholder"></div>
           )}
+        </div>
+        <div className="header-buttons">
+          <button className="flag-button" onClick={(e) => { e.stopPropagation(); handleFlagClick(); }}>
+            <img src={filledFlagIcon} alt="Flag" className="flag-icon" />
+          </button>
         </div>
         {onClose && (
           <button className="close-button" onClick={(e) => { e.stopPropagation(); onClose(); }}>
@@ -156,5 +180,6 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, d
     </div>
   )
 }
+
 
 export default PlacemarkCard

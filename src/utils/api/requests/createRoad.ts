@@ -8,6 +8,9 @@ export interface CreateRoadPointDto {
 
 interface CreateRoadParams {
   rating: number;
+  name?: string;
+  description?: string;
+  fileId?: string;
   points: CreateRoadPointDto[];
 }
 
