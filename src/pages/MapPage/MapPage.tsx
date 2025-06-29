@@ -17,6 +17,9 @@ import { createRoad, type CreateRoadPointDto } from '../../utils/api/requests/cr
 import { getRoads, type Road, type RoadPoint } from '../../utils/api/requests/getRoads'
 import SpotCreationForm, { type SpotFormData } from '../../components/SpotCreationForm/SpotCreationForm'
 import RoadCreationForm, { type RoadFormData } from '../../components/RoadCreationForm/RoadCreationForm'
+import SpotPlacemarkCard from '../../components/SpotPlacemarkCard/SpotPlacemarkCard'
+import ErrorToast from '../../components/ErrorToast/ErrorToast'
+import type { Spot } from '../../utils/api/requests/spots/getSpots'
 
 declare global {
     interface Window {
@@ -43,23 +46,65 @@ const MapPage: React.FC = () => {
   const [pendingSpotCoords, setPendingSpotCoords] = useState<number[] | null>(null)
   const [showRoadForm, setShowRoadForm] = useState<boolean>(false)
   const [pendingRoadData, setPendingRoadData] = useState<CreateRoadPointDto[] | null>(null)
+  const [showError, setShowError] = useState<boolean>(false)
+
+  useEffect(() => {
+    // Listen for WebSocket connection errors
+    const handleWebSocketError = () => {
+      setShowError(true)
+    }
+
+    // Listen for network errors
+    const handleOnlineStatus = () => {
+      if (!navigator.onLine) {
+        setShowError(true)
+      }
+    }
+
+    // Add event listeners for network status
+    window.addEventListener('offline', handleOnlineStatus)
+    window.addEventListener('online', () => setShowError(false))
+
+    // Listen for unhandled promise rejections (network errors)
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason?.message?.includes('fetch') || 
+          event.reason?.message?.includes('network') ||
+          event.reason?.message?.includes('ERR_CONNECTION') ||
+          event.reason?.code === 'NETWORK_ERROR') {
+        setShowError(true)
+      }
+    }
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    // Check initial connection status
+    if (!navigator.onLine) {
+      setShowError(true)
+    }
+
+    return () => {
+      window.removeEventListener('offline', handleOnlineStatus)
+      window.removeEventListener('online', () => setShowError(false))
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, []);
 
     useEffect(() => {
         try {
-            if (!window.ymaps) {
+            if (window.ymaps) {
+                initMap();
+            } else {
                 const script = document.createElement('script');
                 script.src =
                     'https://api-maps.yandex.ru/2.1/?apikey=d1c140db-5f78-41f9-8617-158a231781a9&lang=ru_RU';
                 script.async = true;
                 script.onload = initMap;
-                script.onerror = () => setMapError('Failed to load Yandex Maps');
+                script.onerror = () => setMapError('Не удалось загрузить Яндекс.Карты');
                 document.head.appendChild(script);
-            } else {
-                initMap();
             }
         } catch (error) {
-            console.error('Error loading map:', error);
-            setMapError('Error loading map');
+            console.error('Ошибка при загрузке карты:', error);
+            setMapError('Ошибка при загрузке карты');
         }
 
         function initMap(): void {
@@ -90,8 +135,8 @@ const MapPage: React.FC = () => {
                     }
                 });
             } catch (error) {
-                console.error('Error initializing map:', error);
-                setMapError('Error initializing map');
+                console.error('Ошибка при инициализации карты:', error);
+                setMapError('Ошибка при инициализации карты');
             }
         }
     }, []);
@@ -106,7 +151,7 @@ const MapPage: React.FC = () => {
                 const clickHandler = async function (e: any) {
                     try {
                         console.log(
-                            'Map clicked, isSpotMode:',
+                            'Карта нажата, isSpotMode:',
                             isSpotMode,
                             'isPathMode:',
                             isPathMode,
@@ -116,21 +161,21 @@ const MapPage: React.FC = () => {
 
                         if (isSpotMode && !spotPlaced) {
                             const coords = e.get('coords');
-                            console.log('Placing spot at coordinates:', coords);
+                            console.log('Установка спота по координатам:', coords);
 
                             if (isSpotTooClose(coords)) {
-                                console.log('Spot too close to existing spot, not placing');
+                                console.log('Спот слишком близко к существующему споту, установка отменена');
                                 return;
                             }
 
-                            // Show form instead of immediately creating spot
+                            // Показать форму вместо немедленного создания спота
                             setPendingSpotCoords(coords);
                             setShowSpotForm(true);
                         }
 
                         if (isPathMode) {
                             const coords = e.get('coords');
-                            console.log('Adding point to path at coordinates:', coords);
+                            console.log('Добавление точки в путь по координатам:', coords);
 
                             pathCoordsRef.current.push(coords);
                             pathPointTypesRef.current.push(currentPointType);
@@ -150,7 +195,7 @@ const MapPage: React.FC = () => {
                             );
 
                             newPlacemark.events.add('click', function () {
-                                console.log('Path point clicked but not in path mode - no action');
+                                console.log('Точка пути нажата, но не в режиме пути - действие не выполнено');
                             });
 
                             pathPlacemarksRef.current.push(newPlacemark);
@@ -208,7 +253,7 @@ const MapPage: React.FC = () => {
                             }
                         }
                     } catch (error) {
-                        console.error('Error in click handler:', error);
+                        console.error('Ошибка в обработчике клика:', error);
                     }
                 };
 
@@ -216,7 +261,7 @@ const MapPage: React.FC = () => {
                 mapInstanceRef.current.events.add('click', clickHandler);
             }
         } catch (error) {
-            console.error('Error setting up map events:', error);
+            console.error('Ошибка при настройке событий карты:', error);
         }
     }, [isSpotMode, isPathMode, spotPlaced, currentPointType]);
 
@@ -238,7 +283,7 @@ const MapPage: React.FC = () => {
           
           placemark.events.add('click', function() {
             setSelectedPlace({
-              title: 'Спот',
+              title: spot.name || 'Спот',
               address: `Координаты: ${spot.latitude.toFixed(6)}, ${spot.longitude.toFixed(6)}`,
               spotId: spot.id,
               description: spot.description || 'Описание отсутствует',
@@ -251,6 +296,7 @@ const MapPage: React.FC = () => {
       })
     } catch (error) {
       console.error('Error loading spots:', error)
+      setShowError(true)
     }
   }
 
@@ -361,6 +407,7 @@ const MapPage: React.FC = () => {
       })
     } catch (error) {
       console.error('Error loading roads:', error)
+      setShowError(true)
     }
   }
 
@@ -487,6 +534,7 @@ const MapPage: React.FC = () => {
       mapInstanceRef.current.geoObjects.add(newPlacemark)
     } catch (error) {
       console.error('Error creating spot:', error)
+      setShowError(true)
     } finally {
       setShowSpotForm(false)
       setPendingSpotCoords(null)
@@ -616,6 +664,7 @@ const MapPage: React.FC = () => {
       
     } catch (error) {
       console.error('Error creating road:', error)
+      setShowError(true)
     } finally {
       setShowRoadForm(false)
       setPendingRoadData(null)
@@ -775,57 +824,83 @@ const MapPage: React.FC = () => {
     }
 
   return (
-    <div className="map-container">
-      <div className="map-header">
-        <Link to="/" className="back-button">
-          <img src={vectorIcon} alt="Back" style={{ width: '24px', height: '24px', transform: 'rotate(90deg)' }} />
-        </Link>
-        <h1 className="map-title">Карта</h1>
-        {isSpotMode && (
-          <div className="mode-indicator">
-            Режим: Спот - кликните на карту
-          </div>
+    <>
+      {showError && (
+        <ErrorToast
+          message="В SkSpath произошёл сбой. Проверь подключение к сети и перезапусти приложение."
+          onClose={() => setShowError(false)}
+        />
+      )}
+      <div className="map-container">
+        <div className="map-header">
+          <Link to="/" className="back-button">
+            <img src={vectorIcon} alt="Back" style={{ width: '24px', height: '24px', transform: 'rotate(90deg)' }} />
+          </Link>
+          <h1 className="map-title">Карта</h1>
+          {isSpotMode && (
+            <div className="mode-indicator">
+              Режим: Спот - кликните на карту
+            </div>
+          )}
+          {isPathMode && (
+            <div className="mode-indicator">
+              Режим: Путь - кликайте для добавления точек
+            </div>
+          )}
+        </div>
+        <div ref={mapRef} className="yandex-map"></div>
+        <ShutterComponent />
+        {isPathMode && <OrangeButton onClick={handleOrangeButtonClick} />}
+        <AddButton 
+          onAddSpot={handleAddSpot} 
+          onAddPath={handleAddPath} 
+          onExitMode={handleExitMode}
+          isSpotMode={isSpotMode}
+          isPathMode={isPathMode}
+        />
+        {selectedPlace && selectedPlace.spotId && (
+          <SpotPlacemarkCard
+            title={selectedPlace.title}
+            address={selectedPlace.address}
+            spotId={selectedPlace.spotId}
+            description={selectedPlace.description}
+            fileId={selectedPlace.fileId}
+            onClose={handleCloseCard}
+          />
         )}
-        {isPathMode && (
-          <div className="mode-indicator">
-            Режим: Путь - кликайте для добавления точек
-          </div>
+        {selectedPlace && selectedPlace.roadId && (
+          <PlacemarkCard
+            title={selectedPlace.title}
+            address={selectedPlace.address}
+            roadId={selectedPlace.roadId}
+            description={selectedPlace.description}
+            fileId={selectedPlace.fileId}
+            onClose={handleCloseCard}
+          />
+        )}
+        {selectedPlace && !selectedPlace.spotId && !selectedPlace.roadId && (
+          <PlacemarkCard
+            title={selectedPlace.title}
+            address={selectedPlace.address}
+            description={selectedPlace.description}
+            fileId={selectedPlace.fileId}
+            onClose={handleCloseCard}
+          />
+        )}
+        {showSpotForm && (
+          <SpotCreationForm
+            onSubmit={handleSpotFormSubmit}
+            onCancel={handleSpotFormCancel}
+          />
+        )}
+        {showRoadForm && (
+          <RoadCreationForm
+            onSubmit={handleRoadFormSubmit}
+            onCancel={handleRoadFormCancel}
+          />
         )}
       </div>
-      <div ref={mapRef} className="yandex-map"></div>
-      <ShutterComponent />
-      {isPathMode && <OrangeButton onClick={handleOrangeButtonClick} />}
-      <AddButton 
-        onAddSpot={handleAddSpot} 
-        onAddPath={handleAddPath} 
-        onExitMode={handleExitMode}
-        isSpotMode={isSpotMode}
-        isPathMode={isPathMode}
-      />
-      {selectedPlace && (
-        <PlacemarkCard
-          title={selectedPlace.title}
-          address={selectedPlace.address}
-          spotId={selectedPlace.spotId}
-          roadId={selectedPlace.roadId}
-          description={selectedPlace.description}
-          fileId={selectedPlace.fileId}
-          onClose={handleCloseCard}
-        />
-      )}
-      {showSpotForm && (
-        <SpotCreationForm
-          onSubmit={handleSpotFormSubmit}
-          onCancel={handleSpotFormCancel}
-        />
-      )}
-      {showRoadForm && (
-        <RoadCreationForm
-          onSubmit={handleRoadFormSubmit}
-          onCancel={handleRoadFormCancel}
-        />
-      )}
-    </div>
+    </>
   )
 }
 
