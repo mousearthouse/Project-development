@@ -8,8 +8,10 @@ import { userRegister } from '@/utils/api/requests/userRegister'
 const isEmail = (value: string): boolean => /\S+@\S+\.\S+/.test(value)
 const isPhone = (value: string): boolean => /^8\d{10}$/.test(value)
 const isStrongPassword = (value: string): boolean => {
-  return /[A-Za-z]/.test(value) && /\d/.test(value)
+  return /[a-z]/.test(value) && /\d/.test(value)
 }
+const isValidUsername = (value: string): boolean =>
+  /^[a-zA-Z0-9_.-]+$/.test(value)
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState<string>('')
@@ -28,14 +30,17 @@ const RegisterPage: React.FC = () => {
       setError('Введите имя пользователя')
       return
     }
-
+    if (!isValidUsername(username)) {
+      setError('Имя пользователя может содержать только латинские буквы, цифры и символы ".", "_", "-"')
+      return
+    }
     if (!isEmail(email) && !isPhone(email)) {
       setError('Введите корректную почту или номер телефона. Почта должна быть в формате user@example.com, телефон — 8XXXXXXXXXX')
       return
     }
 
     if (password.length < 6 || !isStrongPassword(password)) {
-      setError('Пароль должен быть не менее 6 символов и содержать хотя бы одну латинскую букву и одну цифру')
+      setError('Пароль должен быть не менее 6 символов и содержать хотя бы одну маленькую латинскую букву и одну цифру')
       return
     }
 
@@ -70,17 +75,6 @@ const RegisterPage: React.FC = () => {
             <img src={vectorIcon} alt="Back" style={{ width: 24, height: 24, transform: 'rotate(90deg)' }} />
           </Link>
           <h1 className="register-title">Регистрация</h1>
-        </div>
-
-        <div className="photo-section">
-          <div className="photo-placeholder">
-            <div className="user-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="#007AFF">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-              </svg>
-            </div>
-          </div>
-          <button className="upload-photo-btn">Загрузить фото</button>
         </div>
 
         <form onSubmit={handleSubmit} className="register-form">

@@ -18,6 +18,7 @@ interface ProfileDto {
   username?: string;
   email?: string;
   phoneNumber?: string;
+  fileId: string;
 }
 
 interface Spot {
