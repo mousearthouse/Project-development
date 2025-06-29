@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import type { FormEvent, ChangeEvent } from 'react'
 import './SpotCreationForm.css'
 import { uploadFile } from '../../utils/api/requests/uploadFile'
+import ErrorToast from '../ErrorToast/ErrorToast'
 
 interface SpotCreationFormProps {
   onSubmit: (data: SpotFormData) => void;
@@ -22,6 +23,7 @@ const SpotCreationForm: React.FC<SpotCreationFormProps> = ({ onSubmit, onCancel 
   const [rating, setRating] = useState<number>(5)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState<boolean>(false)
+  const [showError, setShowError] = useState<boolean>(false)
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -44,6 +46,7 @@ const SpotCreationForm: React.FC<SpotCreationFormProps> = ({ onSubmit, onCancel 
         console.log('File uploaded successfully, ID:', uploadedFileId)
       } catch (error) {
         console.error('Error uploading file:', error)
+        setShowError(true)
         setIsUploading(false)
         return
       }
@@ -61,90 +64,98 @@ const SpotCreationForm: React.FC<SpotCreationFormProps> = ({ onSubmit, onCancel 
   }
 
   return (
-    <div className="spot-form-overlay" onClick={onCancel}>
-      <div className="spot-form-container" onClick={(e) => e.stopPropagation()}>
-        <div className="spot-form-header">
-          <h3>Создать спот</h3>
-          <button className="close-btn" onClick={onCancel}>×</button>
+    <>
+      {showError && (
+        <ErrorToast
+          message="В SkSpath произошёл сбой. Проверь подключение к сети и перезапусти приложение."
+          onClose={() => setShowError(false)}
+        />
+      )}
+      <div className="spot-form-overlay" onClick={onCancel}>
+        <div className="spot-form-container" onClick={(e) => e.stopPropagation()}>
+          <div className="spot-form-header">
+            <h3>Создать спот</h3>
+            <button className="close-btn" onClick={onCancel}>×</button>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="spot-form">
+            <div className="form-group">
+              <label htmlFor="name">Название (необязательно)</label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Введите название спота"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="description">Описание (необязательно)</label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Введите описание спота"
+                rows={3}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="file">Загрузить файл (необязательно)</label>
+              <input
+                type="file"
+                id="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="file-input"
+              />
+              {selectedFile && (
+                <div className="file-preview">
+                  Выбран файл: {selectedFile.name}
+                </div>
+              )}
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="fileId">Или введите File ID (необязательно)</label>
+              <input
+                type="text"
+                id="fileId"
+                value={fileId}
+                onChange={(e) => setFileId(e.target.value)}
+                placeholder="Введите file ID"
+                disabled={!!selectedFile}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="rating">Рейтинг</label>
+              <select
+                id="rating"
+                value={rating}
+                onChange={(e) => setRating(Number(e.target.value))}
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+              </select>
+            </div>
+            
+            <div className="form-buttons">
+              <button type="button" onClick={onCancel} className="cancel-btn">
+                Отмена
+              </button>
+              <button type="submit" className="submit-btn" disabled={isUploading}>
+                {isUploading ? 'Загрузка...' : 'Создать спот'}
+              </button>
+            </div>
+          </form>
         </div>
-        
-        <form onSubmit={handleSubmit} className="spot-form">
-          <div className="form-group">
-            <label htmlFor="name">Название (необязательно)</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Введите название спота"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="description">Описание (необязательно)</label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Введите описание спота"
-              rows={3}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="file">Загрузить файл (необязательно)</label>
-            <input
-              type="file"
-              id="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="file-input"
-            />
-            {selectedFile && (
-              <div className="file-preview">
-                Выбран файл: {selectedFile.name}
-              </div>
-            )}
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="fileId">Или введите File ID (необязательно)</label>
-            <input
-              type="text"
-              id="fileId"
-              value={fileId}
-              onChange={(e) => setFileId(e.target.value)}
-              placeholder="Введите file ID"
-              disabled={!!selectedFile}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="rating">Рейтинг</label>
-            <select
-              id="rating"
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-            >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>5</option>
-            </select>
-          </div>
-          
-          <div className="form-buttons">
-            <button type="button" onClick={onCancel} className="cancel-btn">
-              Отмена
-            </button>
-            <button type="submit" className="submit-btn" disabled={isUploading}>
-              {isUploading ? 'Загрузка...' : 'Создать спот'}
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+    </>
   )
 }
 

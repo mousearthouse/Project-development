@@ -1,25 +1,23 @@
 import React, { useState, useEffect } from 'react'
 import type { MouseEvent } from 'react'
-import './PlacemarkCard.css'
+import './SpotPlacemarkCard.css'
 import { rateSpot } from "@/utils/api/requests/spots/rateSpot"
 import { getSpots } from '../../utils/api/requests/spots/getSpots'
 import { getFileUrl } from '../../utils/api/requests/getFile'
 import filledFlagIcon from '../../assets/filled-flag-24.png'
-import { deleteRoad } from '../../utils/api/requests/deleteRoad'
 import { deleteSpot } from '../../utils/api/requests/deleteSpot'
 import ErrorToast from '../ErrorToast/ErrorToast'
 
-interface PlacemarkCardProps {
+interface SpotPlacemarkCardProps {
   title: string;
   address: string;
-  spotId?: string;
-  roadId?: string;
+  spotId: string;
   description?: string;
   fileId?: string;
   onClose?: () => void;
 }
 
-const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, roadId, description, fileId, onClose }) => {
+const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, spotId, description, fileId, onClose }) => {
   const [rating, setRating] = useState<number>(0)
   const [currentRating, setCurrentRating] = useState<number>(0)
   const [isVisible, setIsVisible] = useState<boolean>(false)
@@ -30,10 +28,7 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, r
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 10)
-    
-    if (spotId) {
-      fetchCurrentRating()
-    }
+    fetchCurrentRating()
   }, [spotId])
 
   const fetchCurrentRating = async () => {
@@ -48,6 +43,7 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, r
       }
     } catch (error) {
       console.error('Error fetching spot rating:', error)
+      setShowError(true)
     }
   }
 
@@ -55,20 +51,20 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, r
     const newRating = starIndex + 1
     setRating(newRating)
     
-    if (spotId) {
-      setIsSubmitting(true)
-      try {
-        await rateSpot({
-          objectId: spotId,
-          rating: newRating
-        })
-        console.log('Rating submitted successfully')
-      } catch (error) {
-        console.error('Error submitting rating:', error)
-        setRating(0)
-      } finally {
-        setIsSubmitting(false)
-      }
+    setIsSubmitting(true)
+    try {
+      await rateSpot({
+        objectId: spotId,
+        rating: newRating
+      })
+      console.log('Rating submitted successfully')
+      setCurrentRating(newRating)
+    } catch (error) {
+      console.error('Error submitting rating:', error)
+      setRating(0)
+      setShowError(true)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -81,42 +77,25 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, r
     setIsExpanded(!isExpanded)
   }
 
-  const handleContentClick = (e: MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation()
-  }
-
   const handleHeaderClick = () => {
     setIsExpanded(!isExpanded)
   }
 
   const handleFlagClick = async () => {
-    if (roadId) {
-      try {
-        await deleteRoad(roadId)
-        console.log('Жалоба отправлена')
-        if (onClose) {
-          onClose()
-        }
-      } catch (error) {
-        console.error('Error deleting road:', error)
+    try {
+      await deleteSpot(spotId)
+      console.log('Жалоба отправлена')
+      if (onClose) {
+        onClose()
       }
-    } else if (spotId) {
-      try {
-        await deleteSpot(spotId)
-        console.log('Жалоба отправлена')
-        if (onClose) {
-          onClose()
-        }
-      } catch (error) {
-        console.error('Error deleting spot:', error)
-      }
-    } else {
-      console.log('Flag clicked - no ID available')
+    } catch (error) {
+      console.error('Error deleting spot:', error)
+      setShowError(true)
     }
   }
 
   const handleImageError = () => {
-    console.error('Error loading image');
+    console.error('Error loading image for spot:', spotId);
     setSpotFileId(null);
     setShowError(true);
   }
@@ -130,7 +109,7 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, r
         />
       )}
       <div 
-        className={`placemark-card ${isVisible ? 'visible' : ''} ${isExpanded ? 'expanded' : ''}`}
+        className={`spot-placemark-card ${isVisible ? 'visible' : ''} ${isExpanded ? 'expanded' : ''}`}
       >
         <div className="card-header" onClick={handleHeaderClick}>
           <div className="place-image">
@@ -161,11 +140,9 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, r
           <h3 className="place-title">{title}</h3>
           <p className="place-address">{address}</p>
           
-          {spotId && (
-            <div className="current-rating">
-              <span>Текущий рейтинг: {currentRating}/5</span>
-            </div>
-          )}
+          <div className="current-rating">
+            <span>Текущий рейтинг: {currentRating}/5</span>
+          </div>
 
           {isExpanded && description && (
             <div className="description-section">
@@ -205,5 +182,4 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, r
   )
 }
 
-
-export default PlacemarkCard
+export default SpotPlacemarkCard
