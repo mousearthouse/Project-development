@@ -1,12 +1,27 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import './ProfilePage.css'
 import { Link } from 'react-router-dom'
 import vectorIcon from '../../assets/vector.svg'
 import routesIcon from '../../assets/routs.svg'
 import spotsIcon from '../../assets/spot_without_dot.svg'
 import favoritesIcon from '../../assets/favorites.svg'
+import { getUserProfile } from '@/utils/api/requests/getUserProfile'
 
 const ProfilePage: React.FC = () => {
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await getUserProfile();
+        console.log(response.data);
+
+      } catch (err) {
+        console.log('Ошибка при получении профиля');
+      }
+    };
+
+    fetchProfile();
+  }, [])
   return (
     <div className="profile-wrapper">
         
