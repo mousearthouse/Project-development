@@ -5,6 +5,7 @@ interface RegisterParams {
   email?: string;
   password: string;
   phoneNumber?: string;
+  fileId?: string;
 }
 
 interface TokenResponse {
