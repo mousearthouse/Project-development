@@ -1,23 +1,35 @@
 .placemark-card {
   position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100%);
-  width: calc(100% - 40px);
-  max-width: 360px;
-  background-color: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  font-family: system-ui, -apple-system, sans-serif;
-  z-index: 1005;
-  overflow: hidden;
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out, max-height 0.3s ease-out;
+  z-index: 1000;
+  max-height: 30vh;
+  overflow-y: auto;
+  cursor: pointer;
 }
 
 .placemark-card.visible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
+  transform: translateY(0);
+}
+
+.placemark-card.expanded {
+  max-height: 70vh;
+  cursor: default;
+}
+
+.card-handle {
+  width: 40px;
+  height: 4px;
+  background-color: #c7c7cc;
+  border-radius: 2px;
+  margin: 0 auto 16px auto;
 }
 
 .card-header {
@@ -32,6 +44,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.spot-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
 }
 
 .image-placeholder {
@@ -139,17 +158,55 @@
   opacity: 0.7;
 }
 
-@media (max-width: 480px) {
-  .placemark-card {
-    bottom: 10px;
-    width: calc(100% - 20px);
-  }
-  
-  .card-content {
-    padding: 14px 16px 16px 16px;
-  }
-  
-  .place-title {
-    font-size: 18px;
-  }
+.current-rating {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #666;
+  text-align: center;
 }
+
+.profile-info {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.profile-email,
+.profile-phone {
+  font-size: 14px;
+  color: #666;
+  margin: 2px 0;
+}
+
+.rating-status {
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.star.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.description-section {
+  margin: 16px 0;
+  padding: 16px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+}
+
+.description-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.place-description {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+

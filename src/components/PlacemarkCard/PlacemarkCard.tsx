@@ -3,19 +3,24 @@ import type { MouseEvent } from 'react'
 import './PlacemarkCard.css'
 import { rateSpot } from '../../utils/api/requests/rateSpot'
 import { getSpots } from '../../utils/api/requests/getSpots'
+import { getFileUrl } from '../../utils/api/requests/getFile'
 
 interface PlacemarkCardProps {
   title: string;
   address: string;
   spotId?: string;
+  description?: string;
+  fileId?: string;
   onClose?: () => void;
 }
 
-const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, onClose }) => {
+const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, description, fileId, onClose }) => {
   const [rating, setRating] = useState<number>(0)
   const [currentRating, setCurrentRating] = useState<number>(0)
   const [isVisible, setIsVisible] = useState<boolean>(false)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [isExpanded, setIsExpanded] = useState<boolean>(true)
+  const [spotFileId, setSpotFileId] = useState<string | null>(fileId || null)
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 10)
@@ -31,6 +36,9 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, o
       const spot = response.data.find(s => s.id === spotId)
       if (spot) {
         setCurrentRating(spot.rating)
+        if (spot.fileId) {
+          setSpotFileId(spot.fileId)
+        }
       }
     } catch (error) {
       console.error('Error fetching spot rating:', error)
@@ -63,25 +71,59 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, o
     console.log('Написать отзыв для:', title)
   }
 
+  const handleCardClick = () => {
+    setIsExpanded(!isExpanded)
+  }
+
+  const handleContentClick = (e: MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+  }
+
+  const handleHeaderClick = () => {
+    setIsExpanded(!isExpanded)
+  }
+
   return (
-    <div className={`placemark-card ${isVisible ? 'visible' : ''}`}>
-      <div className="card-header">
+    <div 
+      className={`placemark-card ${isVisible ? 'visible' : ''} ${isExpanded ? 'expanded' : ''}`}
+    >
+      <div className="card-header" onClick={handleHeaderClick}>
         <div className="place-image">
-          <div className="image-placeholder"></div>
+          {spotFileId ? (
+            <img 
+              src={getFileUrl(spotFileId)} 
+              alt={title}
+              className="spot-image"
+              onError={(e) => {
+                console.error('Error loading image');
+                setSpotFileId(null);
+              }}
+            />
+          ) : (
+            <div className="image-placeholder"></div>
+          )}
         </div>
         {onClose && (
-          <button className="close-button" onClick={onClose}>
+          <button className="close-button" onClick={(e) => { e.stopPropagation(); onClose(); }}>
           </button>
         )}
       </div>
       
       <div className="card-content">
+        <div className="card-handle" onClick={handleCardClick}></div>
         <h3 className="place-title">{title}</h3>
         <p className="place-address">{address}</p>
         
         {spotId && (
           <div className="current-rating">
             <span>Текущий рейтинг: {currentRating}/5</span>
+          </div>
+        )}
+
+        {isExpanded && description && (
+          <div className="description-section">
+            <h4>Описание</h4>
+            <p className="place-description">{description}</p>
           </div>
         )}
         
@@ -114,7 +156,5 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, o
     </div>
   )
 }
-
-
 
 export default PlacemarkCard

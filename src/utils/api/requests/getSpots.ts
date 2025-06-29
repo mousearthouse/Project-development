@@ -7,6 +7,9 @@ export interface Spot {
   createDate: string;
   authorId: string;
   rating: number;
+  name?: string;
+  description?: string;
+  fileId?: string;
 }
 
 export const getSpots = async () => {

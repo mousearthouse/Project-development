@@ -15,6 +15,7 @@ import { createSpot } from '../../utils/api/requests/createSpot'
 import { getSpots, type Spot } from '../../utils/api/requests/getSpots'
 import { createRoad, type CreateRoadPointDto } from '../../utils/api/requests/createRoad'
 import { getRoads, type Road, type RoadPoint } from '../../utils/api/requests/getRoads'
+import SpotCreationForm, { type SpotFormData } from '../../components/SpotCreationForm/SpotCreationForm'
 
 declare global {
   interface Window {
@@ -31,12 +32,14 @@ const MapPage: React.FC = () => {
   const pathPlacemarksRef = useRef<any[]>([])
   const pathPointTypesRef = useRef<PointTypeType[]>([])
   const savedPathsRef = useRef<{coords: number[][], polyline: any, placemarks: any[], isCollapsed: boolean, firstPlacemark?: any}[]>([])
-  const [selectedPlace, setSelectedPlace] = useState<{title: string, address: string, spotId?: string} | null>(null)
+  const [selectedPlace, setSelectedPlace] = useState<{title: string, address: string, spotId?: string, description?: string, fileId?: string} | null>(null)
   const [isSpotMode, setIsSpotMode] = useState<boolean>(false)
   const [isPathMode, setIsPathMode] = useState<boolean>(false)
   const [spotPlaced, setSpotPlaced] = useState<boolean>(false)
   const [mapError, setMapError] = useState<string | null>(null)
   const [currentPointType, setCurrentPointType] = useState<PointTypeType>(PointType.NORMAL)
+  const [showSpotForm, setShowSpotForm] = useState<boolean>(false)
+  const [pendingSpotCoords, setPendingSpotCoords] = useState<number[] | null>(null)
 
   useEffect(() => {
     try {
@@ -101,38 +104,9 @@ const MapPage: React.FC = () => {
                 return
               }
               
-              try {
-                await createSpot({
-                  latitude: coords[0],
-                  longitude: coords[1],
-                  rating: 5
-                })
-                console.log('Spot created successfully')
-              } catch (error) {
-                console.error('Error creating spot:', error)
-                return
-              }
-              
-              const newPlacemark = new window.ymaps.Placemark(coords, {
-                balloonContent: `Координаты: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`
-              }, {
-                iconLayout: 'default#image',
-                iconImageHref: spotIcon,
-                iconImageSize: [50, 50],
-                iconImageOffset: [-25, -50]
-              })
-              
-              newPlacemark.events.add('click', function() {
-                setSelectedPlace({
-                  title: 'Новая точка',
-                  address: `Координаты: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`
-                })
-              })
-              
-              mapInstanceRef.current.geoObjects.add(newPlacemark)
-              setSpotPlaced(true)
-              setIsSpotMode(false)
-              console.log('Spot placed, exiting spot mode')
+              // Show form instead of immediately creating spot
+              setPendingSpotCoords(coords)
+              setShowSpotForm(true)
             }
             
 
@@ -232,7 +206,9 @@ const MapPage: React.FC = () => {
             setSelectedPlace({
               title: 'Спот',
               address: `Координаты: ${spot.latitude.toFixed(6)}, ${spot.longitude.toFixed(6)}`,
-              spotId: spot.id
+              spotId: spot.id,
+              description: spot.description || 'Описание отсутствует',
+              fileId: spot.fileId
             })
           })
           
@@ -527,6 +503,49 @@ const MapPage: React.FC = () => {
     }
   }
 
+  const handleSpotFormSubmit = async (formData: SpotFormData) => {
+    if (!pendingSpotCoords) return
+    
+    try {
+      await createSpot({
+        latitude: pendingSpotCoords[0],
+        longitude: pendingSpotCoords[1],
+        ...formData
+      })
+      console.log('Spot created successfully')
+      
+      const newPlacemark = new window.ymaps.Placemark(pendingSpotCoords, {
+        balloonContent: `${formData.name || 'Спот'} (рейтинг: ${formData.rating})`
+      }, {
+        iconLayout: 'default#image',
+        iconImageHref: spotIcon,
+        iconImageSize: [50, 50],
+        iconImageOffset: [-25, -50]
+      })
+      
+      newPlacemark.events.add('click', function() {
+        setSelectedPlace({
+          title: formData.name || 'Спот',
+          address: `Координаты: ${pendingSpotCoords[0].toFixed(6)}, ${pendingSpotCoords[1].toFixed(6)}`
+        })
+      })
+      
+      mapInstanceRef.current.geoObjects.add(newPlacemark)
+    } catch (error) {
+      console.error('Error creating spot:', error)
+    } finally {
+      setShowSpotForm(false)
+      setPendingSpotCoords(null)
+      setSpotPlaced(true)
+      setIsSpotMode(false)
+    }
+  }
+
+  const handleSpotFormCancel = () => {
+    setShowSpotForm(false)
+    setPendingSpotCoords(null)
+  }
+
   const createPointIcon = (pointType: PointTypeType): string => {
     if (pointType === PointType.BAD_ROAD) {
       return badRoadIcon
@@ -685,7 +704,15 @@ const MapPage: React.FC = () => {
           title={selectedPlace.title}
           address={selectedPlace.address}
           spotId={selectedPlace.spotId}
+          description={selectedPlace.description}
+          fileId={selectedPlace.fileId}
           onClose={handleCloseCard}
+        />
+      )}
+      {showSpotForm && (
+        <SpotCreationForm
+          onSubmit={handleSpotFormSubmit}
+          onCancel={handleSpotFormCancel}
         />
       )}
     </div>

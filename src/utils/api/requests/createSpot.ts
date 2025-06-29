@@ -4,6 +4,9 @@ interface CreateSpotParams {
   latitude: number;
   longitude: number;
   rating: number;
+  name?: string;
+  description?: string;
+  fileId?: string;
 }
 
 export const createSpot = async (params: CreateSpotParams) => {
