@@ -5,7 +5,9 @@ import vectorIcon from '../../assets/vector.svg'
 import routesIcon from '../../assets/routs.svg'
 import spotsIcon from '../../assets/spot_without_dot.svg'
 import favoritesIcon from '../../assets/favorites.svg'
+import editIcon from '../../assets/edit.svg'
 import { getUserProfile } from '@/utils/api/requests/getUserProfile'
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfile {
   id: string;
@@ -17,6 +19,7 @@ interface UserProfile {
 const ProfilePage: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -34,6 +37,9 @@ const ProfilePage: React.FC = () => {
     fetchProfile();
   }, [])
 
+const goToEditProfile = () => {
+  navigate('/profile/edit');
+};
   return (
     <div className="profile-wrapper">
         
@@ -48,15 +54,17 @@ const ProfilePage: React.FC = () => {
               </svg>
             </div>
           </div>
-        <div className="profile-username">
-          {loading ? 'Загрузка...' : userProfile?.username || 'Username'}
-        </div>
-        {userProfile && (
-          <div className="profile-info">
-            <div className="profile-email">{userProfile.email}</div>
-            <div className="profile-phone">{userProfile.phoneNumber}</div>
-          </div>
-        )}
+<div className="profile-username">
+  {loading ? 'Загрузка...' : userProfile?.username || 'Username'}
+
+ {userProfile && (
+    <div className="profile-info">
+      {userProfile.email && <div className="profile-email">{userProfile.email}</div>}
+      {userProfile.phoneNumber && <div className="profile-phone">{userProfile.phoneNumber}</div>}
+    </div>
+  )}
+</div>
+
       </div>
 
 <div className="profile-buttons">
@@ -66,20 +74,25 @@ const ProfilePage: React.FC = () => {
     </button>
     <div className="profile-button-label">Маршруты</div>
   </div>
-
-  <div className="profile-button-wrapper">
-    <button className="profile-button orangey">
-      <img src={spotsIcon} alt="Споты" className="profile-button-icon" />
-    </button>
-    <div className="profile-button-label">Споты</div>
-  </div>
-
   <div className="profile-button-wrapper">
     <button className="profile-button">
       <img src={favoritesIcon} alt="Избранное" className="profile-button-icon" />
     </button>
     <div className="profile-button-label">Избранное</div>
   </div>
+  <div className="profile-button-wrapper">
+    <button className="profile-button orangey">
+      <img src={spotsIcon} alt="Споты" className="profile-button-icon" />
+    </button>
+    <div className="profile-button-label">Споты</div>
+  </div>
+  <div className="profile-button-wrapper"  onClick={goToEditProfile}>
+    <button className="profile-button">
+      <img src={editIcon} alt="Редактировать" className="profile-button-icon" style={{ width: '30px', height: '30px', transform: 'rotate(90deg)'}}/>
+    </button>
+    <div className="profile-button-label">Изменить профиль</div>
+  </div>
+
 </div>
 
 <div className="bottom-highlight"></div>
