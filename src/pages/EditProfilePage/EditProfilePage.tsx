@@ -10,6 +10,8 @@ import { uploadFile } from '@/utils/api/requests/uploadFile';
 
 const isEmail = (value: string): boolean => /\S+@\S+\.\S+/.test(value)
 const isPhone = (value: string): boolean => /^8\d{10}$/.test(value);
+const isValidUsername = (value: string): boolean =>
+  /^[a-zA-Z0-9_.-]+$/.test(value)
 
 const EditProfilePage: React.FC = () => {
   const [username, setUsername] = useState<string>('')
@@ -76,6 +78,10 @@ const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
       return
     }
 
+    if (!isValidUsername(username)) {
+      setError('Имя пользователя может содержать только латинские буквы, цифры и символы ".", "_", "-"')
+      return
+    }
     const payload = {
       username,
       email: isEmail(email) ? email : undefined,
