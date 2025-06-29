@@ -31,10 +31,14 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
   const [showError, setShowError] = useState<boolean>(false)
   const [isFavorite, setIsFavorite] = useState<boolean>(false)
 
+  const isAuthenticated = !!localStorage.getItem('token')
+
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 10)
     fetchCurrentRating()
-    checkIfFavorite()
+    if (isAuthenticated) {
+      checkIfFavorite()
+    }
   }, [spotId])
 
   const fetchCurrentRating = async () => {
@@ -161,13 +165,15 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
               <img src={filledFlagIcon} alt="Flag" className="flag-icon" />
             </button>
           </div>
-          <button className="favorite-button" onClick={(e) => { e.stopPropagation(); handleFavoriteClick(); }}>
-            <img 
-              src={favoritesIcon} 
-              alt="Favorites" 
-              className={`favorite-icon ${isFavorite ? 'active' : ''}`} 
-            />
-          </button>
+          {isAuthenticated && (
+            <button className="favorite-button" onClick={(e) => { e.stopPropagation(); handleFavoriteClick(); }}>
+              <img 
+                src={favoritesIcon} 
+                alt="Favorites" 
+                className={`favorite-icon ${isFavorite ? 'active' : ''}`} 
+              />
+            </button>
+          )}
           {onClose && (
             <button className="close-button" onClick={(e) => { e.stopPropagation(); onClose(); }}>
             </button>
