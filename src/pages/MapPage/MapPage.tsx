@@ -60,11 +60,9 @@ const MapPage: React.FC = () => {
       }
     }
 
-    // Add event listeners for network status
     window.addEventListener('offline', handleOnlineStatus)
     window.addEventListener('online', () => setShowError(false))
 
-    // Listen for unhandled promise rejections (network errors)
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       if (event.reason?.message?.includes('fetch') || 
           event.reason?.message?.includes('network') ||

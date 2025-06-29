@@ -1,13 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import './ShutterComponent.css';
 import vectorIcon from '../../assets/vector.svg';
+import { getUserProfile } from '@/utils/api/requests/getUserProfile';
+import { getFileUrl } from '@/utils/api/requests/getFile';
+
+interface UserProfile {
+    id: string;
+    username?: string;
+    email?: string;
+    phoneNumber?: string;
+    fileId?: string;
+}
 
 const ShutterComponent: React.FC = () => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
     const isAuthenticated = !!localStorage.getItem('token');
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            const fetchProfile = async () => {
+                try {
+                    const response = await getUserProfile();
+                    setUserProfile(response.data);
+                } catch (err) {
+                    console.log('Ошибка при получении профиля');
+                }
+            };
+
+            fetchProfile();
+        }
+    }, [isAuthenticated]);
 
     const handleToggleSheet = (): void => {
         setIsExpanded(!isExpanded);
@@ -61,14 +87,22 @@ const ShutterComponent: React.FC = () => {
                         <div className="sheet-content">
                             <div className="profile-section">
                                 <div className="avatar-container">
-                                    <div className="avatar-circle">
-                                        <span className="avatar-text">
-                                            {isAuthenticated ? 'US' : 'CC'}
-                                        </span>
-                                    </div>
+                                    {isAuthenticated && userProfile?.fileId ? (
+                                        <img
+                                            src={getFileUrl(userProfile.fileId)}
+                                            alt="Аватар пользователя"
+                                            className="avatar-image"
+                                        />
+                                    ) : (
+                                        <div className="avatar-circle">
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="#007AFF">
+                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                            </svg>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="profile-name">
-                                    {isAuthenticated ? 'Пользователь' : 'incognito1234'}
+                                    {isAuthenticated ? (userProfile?.username || 'Пользователь') : 'incognito1234'}
                                 </div>
                             </div>
 

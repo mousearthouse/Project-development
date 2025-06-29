@@ -5,7 +5,11 @@ import { rateSpot } from "@/utils/api/requests/spots/rateSpot"
 import { getSpots } from '../../utils/api/requests/spots/getSpots'
 import { getFileUrl } from '../../utils/api/requests/getFile'
 import filledFlagIcon from '../../assets/filled-flag-24.png'
+import favoritesIcon from '../../assets/favorites.svg'
 import { deleteSpot } from '../../utils/api/requests/deleteSpot'
+import { addToFavorites } from '../../utils/api/requests/addToFavorites'
+import { removeFromFavorites } from '../../utils/api/requests/removeFromFavorites'
+import { getFavoriteSpots } from '../../utils/api/requests/getFavoriteSpots'
 import ErrorToast from '../ErrorToast/ErrorToast'
 
 interface SpotPlacemarkCardProps {
@@ -25,10 +29,12 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
   const [isExpanded, setIsExpanded] = useState<boolean>(true)
   const [spotFileId, setSpotFileId] = useState<string | null>(fileId || null)
   const [showError, setShowError] = useState<boolean>(false)
+  const [isFavorite, setIsFavorite] = useState<boolean>(false)
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 10)
     fetchCurrentRating()
+    checkIfFavorite()
   }, [spotId])
 
   const fetchCurrentRating = async () => {
@@ -44,6 +50,16 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
     } catch (error) {
       console.error('Error fetching spot rating:', error)
       setShowError(true)
+    }
+  }
+
+  const checkIfFavorite = async () => {
+    try {
+      const response = await getFavoriteSpots()
+      const favoriteSpots = response.data
+      setIsFavorite(favoriteSpots.some(spot => spot.id === spotId))
+    } catch (error) {
+      console.error('Error checking favorite status:', error)
     }
   }
 
@@ -94,6 +110,22 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
     }
   }
 
+  const handleFavoriteClick = async () => {
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(spotId)
+        console.log('Убрано из избранного')
+      } else {
+        await addToFavorites(spotId)
+        console.log('Добавлено в избранное')
+      }
+      setIsFavorite(!isFavorite)
+    } catch (error) {
+      console.error('Error updating favorites:', error)
+      setShowError(true)
+    }
+  }
+
   const handleImageError = () => {
     console.error('Error loading image for spot:', spotId);
     setSpotFileId(null);
@@ -129,6 +161,13 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
               <img src={filledFlagIcon} alt="Flag" className="flag-icon" />
             </button>
           </div>
+          <button className="favorite-button" onClick={(e) => { e.stopPropagation(); handleFavoriteClick(); }}>
+            <img 
+              src={favoritesIcon} 
+              alt="Favorites" 
+              className={`favorite-icon ${isFavorite ? 'active' : ''}`} 
+            />
+          </button>
           {onClose && (
             <button className="close-button" onClick={(e) => { e.stopPropagation(); onClose(); }}>
             </button>
