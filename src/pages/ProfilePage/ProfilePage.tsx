@@ -9,6 +9,9 @@ import editIcon from '../../assets/edit.svg';
 import { getUserProfile } from '@/utils/api/requests/getUserProfile';
 import { useNavigate } from 'react-router-dom';
 import { getFileUrl } from '@/utils/api/requests/getFile';
+import { getMySpots } from '@/utils/api/requests/spots/getMySpot';
+import { rateSpot } from '@/utils/api/requests/spots/rateSpot';
+
 
 interface UserProfile {
     id: string;
@@ -18,10 +21,17 @@ interface UserProfile {
     fileId?: string;
 }
 
+
 const ProfilePage: React.FC = () => {
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const navigate = useNavigate();
+const [spots, setSpots] = useState<Spot[]>([]);
+const [showSpots, setShowSpots] = useState<boolean>(false);
+ const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [rating, setRating] = useState<number>(0);
+const [ratingMap, setRatingMap] = useState<{ [spotId: string]: number }>({});
+const [expandedSpots, setExpandedSpots] = useState<{ [spotId: string]: boolean }>({});
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -38,6 +48,46 @@ const ProfilePage: React.FC = () => {
 
         fetchProfile();
     }, []);
+const loadSpots = async () => {
+  try {
+    const response = await getMySpots();
+    setSpots(response.data);
+    setShowSpots(true);
+  } catch (err) {
+    console.error('Ошибка загрузки спотов:', err);
+  }
+};
+const handleStarClick = async (spotId: string, starIndex: number): Promise<void> => {
+  const newRating = starIndex + 1;
+
+  setRatingMap((prev) => ({
+    ...prev,
+    [spotId]: newRating,
+  }));
+
+  setIsSubmitting(true);
+  try {
+    await rateSpot({
+      objectId: spotId,
+      rating: newRating,
+    });
+    console.log('Рейтинг отправлен');
+  } catch (error) {
+    console.error('Ошибка при отправке рейтинга:', error);
+    setRatingMap((prev) => ({
+      ...prev,
+      [spotId]: 0,
+    }));
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+const toggleExpand = (spotId: string) => {
+  setExpandedSpots(prev => ({
+    ...prev,
+    [spotId]: !prev[spotId],
+  }));
+};
 
     const goToEditProfile = () => {
         navigate('/profile/edit');
@@ -108,7 +158,7 @@ const ProfilePage: React.FC = () => {
                     <div className="profile-button-label">Избранное</div>
                 </div>
                 <div className="profile-button-wrapper">
-                    <button className="profile-button orangey">
+                    <button className="profile-button orangey" onClick={loadSpots}>
                         <img src={spotsIcon} alt="Споты" className="profile-button-icon" />
                     </button>
                     <div className="profile-button-label">Споты</div>
@@ -137,7 +187,82 @@ const ProfilePage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bottom-highlight"></div>
+            <div className="bottom-highlight">
+                {showSpots && (
+  <div className="spot-list">
+    {spots.map((spot) => (
+    <div key={spot.id} className="spot-card">
+  <div className="spot-image-wrapper" style={{ position: 'relative' }}>
+    {spot.fileId ? (
+      <>
+        <img
+          src={getFileUrl(spot.fileId)}
+          alt={spot.name}
+          className="spot-image"
+        />
+        <img
+          src={favoritesIcon}
+          alt="Избранное"
+          className="favorite-icon"
+        />
+      </>
+    ) : (
+      <>
+        <img
+          src={favoritesIcon}
+          alt="Избранное"
+          className="favorite-icon no-photo-favorite"
+        />
+      </>
+    )}
+  </div>
+        
+        <div className="spot-info">
+          <h3 className="spot-name">{spot.name}</h3>
+          <p className="spot-coordinates">Координаты: {spot.latitude}, {spot.longitude}</p>
+          <p className="spot-rating">Рейтинг: {spot.rating}</p>
+<p className="spot-description">
+  {spot.description
+    ? expandedSpots[spot.id]
+      ? spot.description
+      : `${spot.description.slice(0, 10)}${spot.description.length > 100 ? '...' : ''}`
+    : 'Описание отсутствует'}
+  {spot.description && spot.description.length > 100 && (
+    <button className="read-more" onClick={() => toggleExpand(spot.id)}>
+      {expandedSpots[spot.id] ? 'Свернуть' : 'Читать больше'}
+    </button>
+  )}
+</p>
+
+                  <div className="rating-label">Оцените этот спот:</div>
+          <div className="stars">
+  {[...Array(5)].map((_, index) => {
+    const currentRating = ratingMap[spot.id] ?? spot.rating;
+    return (
+      <button
+        key={index}
+        className={`star ${index < currentRating ? 'filled' : ''} ${isSubmitting ? 'disabled' : ''}`}
+        onClick={() => handleStarClick(spot.id, index)}
+        disabled={isSubmitting}
+      >
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+            fill={index < currentRating ? '#FFD700' : '#E5E5EA'}
+          />
+        </svg>
+      </button>
+    );
+  })}
+</div>
+        </div>
+
+      </div>
+    ))}
+  </div>
+)}
+
+            </div>
         </div>
     );
 };
