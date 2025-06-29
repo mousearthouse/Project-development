@@ -6,6 +6,7 @@ import { getSpots } from '../../utils/api/requests/spots/getSpots'
 import { getFileUrl } from '../../utils/api/requests/getFile'
 import filledFlagIcon from '../../assets/filled-flag-24.png'
 import { deleteRoad } from '../../utils/api/requests/deleteRoad'
+import { deleteSpot } from '../../utils/api/requests/deleteSpot'
 
 interface PlacemarkCardProps {
   title: string;
@@ -97,8 +98,18 @@ const PlacemarkCard: React.FC<PlacemarkCardProps> = ({ title, address, spotId, r
       } catch (error) {
         console.error('Error deleting road:', error)
       }
+    } else if (spotId) {
+      try {
+        await deleteSpot(spotId)
+        console.log('Жалоба отправлена')
+        if (onClose) {
+          onClose()
+        }
+      } catch (error) {
+        console.error('Error deleting spot:', error)
+      }
     } else {
-      console.log('Flag clicked - no road ID available')
+      console.log('Flag clicked - no ID available')
     }
   }
 
