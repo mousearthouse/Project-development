@@ -19,3 +19,15 @@ interface ProfileDto {
   email?: string;
   proneNumber?: string;
 }
+
+interface Spot {
+  id: string;
+  latitude: number;
+  longitude: number;
+  createDate: string;
+  authorId: string;
+  rating: number;
+  name?: string;
+  description?: string;
+  fileId?: string;
+}

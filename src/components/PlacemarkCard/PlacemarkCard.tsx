@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import type { MouseEvent } from 'react'
 import './PlacemarkCard.css'
-import { rateSpot } from '../../utils/api/requests/rateSpot'
-import { getSpots } from '../../utils/api/requests/getSpots'
+import { rateSpot } from "@/utils/api/requests/spots/rateSpot"
+import { getSpots } from '../../utils/api/requests/spots/getSpots'
 import { getFileUrl } from '../../utils/api/requests/getFile'
 
 interface PlacemarkCardProps {
