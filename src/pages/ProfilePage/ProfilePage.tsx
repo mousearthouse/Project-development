@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import './ProfilePage.css'
 import { Link } from 'react-router-dom'
 import vectorIcon from '../../assets/vector.svg'
@@ -7,21 +7,33 @@ import spotsIcon from '../../assets/spot_without_dot.svg'
 import favoritesIcon from '../../assets/favorites.svg'
 import { getUserProfile } from '@/utils/api/requests/getUserProfile'
 
+interface UserProfile {
+  id: string;
+  username?: string; // Make optional to match ProfileDto
+  email?: string;
+  phoneNumber?: string; // Make optional to match ProfileDto
+}
+
 const ProfilePage: React.FC = () => {
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const response = await getUserProfile();
         console.log(response.data);
-
+        setUserProfile(response.data);
       } catch (err) {
         console.log('Ошибка при получении профиля');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProfile();
   }, [])
+
   return (
     <div className="profile-wrapper">
         
@@ -36,7 +48,15 @@ const ProfilePage: React.FC = () => {
               </svg>
             </div>
           </div>
-        <div className="profile-username">Username</div>
+        <div className="profile-username">
+          {loading ? 'Загрузка...' : userProfile?.username || 'Username'}
+        </div>
+        {userProfile && (
+          <div className="profile-info">
+            <div className="profile-email">{userProfile.email}</div>
+            <div className="profile-phone">{userProfile.phoneNumber}</div>
+          </div>
+        )}
       </div>
 
 <div className="profile-buttons">

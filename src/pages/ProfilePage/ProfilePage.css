@@ -111,3 +111,15 @@
   background-color: #E8E8E8;
 
 }
+
+.profile-info {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.profile-email,
+.profile-phone {
+  font-size: 12px;
+  color: #666;
+  margin: 2px 0;
+}
