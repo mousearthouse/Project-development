@@ -11,6 +11,10 @@ import PlacemarkCard from '../../components/PlacemarkCard/PlacemarkCard'
 import AddButton from '../../components/AddButton/AddButton'
 import OrangeButton, { PointType } from '../../components/OrangeButton/OrangeButton'
 import type { PointType as PointTypeType } from '../../components/OrangeButton/OrangeButton'
+import { createSpot } from '../../utils/api/requests/createSpot'
+import { getSpots, type Spot } from '../../utils/api/requests/getSpots'
+import { createRoad, type CreateRoadPointDto } from '../../utils/api/requests/createRoad'
+import { getRoads, type Road, type RoadPoint } from '../../utils/api/requests/getRoads'
 
 declare global {
   interface Window {
@@ -27,7 +31,7 @@ const MapPage: React.FC = () => {
   const pathPlacemarksRef = useRef<any[]>([])
   const pathPointTypesRef = useRef<PointTypeType[]>([])
   const savedPathsRef = useRef<{coords: number[][], polyline: any, placemarks: any[], isCollapsed: boolean, firstPlacemark?: any}[]>([])
-  const [selectedPlace, setSelectedPlace] = useState<{title: string, address: string} | null>(null)
+  const [selectedPlace, setSelectedPlace] = useState<{title: string, address: string, spotId?: string} | null>(null)
   const [isSpotMode, setIsSpotMode] = useState<boolean>(false)
   const [isPathMode, setIsPathMode] = useState<boolean>(false)
   const [spotPlaced, setSpotPlaced] = useState<boolean>(false)
@@ -65,7 +69,9 @@ const MapPage: React.FC = () => {
             })
 
             mapInstanceRef.current = map
-
+            
+            loadExistingSpots()
+            loadExistingRoads()
           }
         })
       } catch (error) {
@@ -82,7 +88,7 @@ const MapPage: React.FC = () => {
           mapInstanceRef.current.events.remove('click', clickHandlerRef.current)
         }
         
-        const clickHandler = function (e: any) {
+        const clickHandler = async function (e: any) {
           try {
             console.log('Map clicked, isSpotMode:', isSpotMode, 'isPathMode:', isPathMode, 'spotPlaced:', spotPlaced)
             
@@ -92,6 +98,18 @@ const MapPage: React.FC = () => {
               
               if (isSpotTooClose(coords)) {
                 console.log('Spot too close to existing spot, not placing')
+                return
+              }
+              
+              try {
+                await createSpot({
+                  latitude: coords[0],
+                  longitude: coords[1],
+                  rating: 5
+                })
+                console.log('Spot created successfully')
+              } catch (error) {
+                console.error('Error creating spot:', error)
                 return
               }
               
@@ -194,6 +212,154 @@ const MapPage: React.FC = () => {
     }
   }, [isSpotMode, isPathMode, spotPlaced, currentPointType])
 
+  const loadExistingSpots = async () => {
+    try {
+      const response = await getSpots()
+      const spots = response.data
+      
+      spots.forEach((spot: Spot) => {
+        if (spot.latitude !== 0 && spot.longitude !== 0) {
+          const placemark = new window.ymaps.Placemark([spot.latitude, spot.longitude], {
+            balloonContent: `Спот (рейтинг: ${spot.rating})`
+          }, {
+            iconLayout: 'default#image',
+            iconImageHref: spotIcon,
+            iconImageSize: [50, 50],
+            iconImageOffset: [-25, -50]
+          })
+          
+          placemark.events.add('click', function() {
+            setSelectedPlace({
+              title: 'Спот',
+              address: `Координаты: ${spot.latitude.toFixed(6)}, ${spot.longitude.toFixed(6)}`,
+              spotId: spot.id
+            })
+          })
+          
+          mapInstanceRef.current.geoObjects.add(placemark)
+        }
+      })
+    } catch (error) {
+      console.error('Error loading spots:', error)
+    }
+  }
+
+  const loadExistingRoads = async () => {
+    try {
+      const response = await getRoads()
+      const roads = response.data
+      
+      roads.forEach((road: Road) => {
+        if (road.points.length > 1) {
+          const sortedPoints = sortRoadPoints(road.points)
+          const coordinates = sortedPoints.map(point => [point.latitude, point.longitude])
+          
+          const segments: any[] = []
+          for (let i = 0; i < coordinates.length - 1; i++) {
+            const startType = sortedPoints[i].type
+            const endType = sortedPoints[i + 1].type
+            const segmentCoords = [coordinates[i], coordinates[i + 1]]
+            
+            const color = (startType === 'Bad' && endType === 'Bad') 
+              ? '#FF9500' 
+              : (startType === 'Stairs' && endType === 'Stairs')
+              ? '#555555'
+              : '#0080FF'
+            
+            const segment = new window.ymaps.Polyline(segmentCoords, {
+              hintContent: `Дорога (рейтинг: ${road.rating})`
+            }, {
+              strokeColor: color,
+              strokeWidth: 3,
+              strokeOpacity: 0.8,
+              zIndex: 100
+            })
+            
+            segments.push(segment)
+          }
+          
+          const placemarks: any[] = sortedPoints.map((point: RoadPoint) => {
+            const iconType = point.type === 'Bad' ? PointType.BAD_ROAD : 
+                           point.type === 'Stairs' ? PointType.STAIRS : PointType.NORMAL
+            
+            return new window.ymaps.Placemark([point.latitude, point.longitude], {
+              balloonContent: `Точка дороги (${point.type})`
+            }, {
+              iconLayout: 'default#image',
+              iconImageHref: createPointIcon(iconType),
+              iconImageSize: [40, 40],
+              iconImageOffset: [-20, -40]
+            })
+          })
+          
+          const middleIndex = Math.floor(placemarks.length / 2)
+          const middlePlacemark = placemarks[middleIndex]
+          
+          if (middlePlacemark) {
+            mapInstanceRef.current.geoObjects.add(middlePlacemark)
+            
+            const expandHandler = function() {
+              console.log('Expanding collapsed road')
+              
+              placemarks.forEach(placemark => {
+                mapInstanceRef.current.geoObjects.add(placemark)
+              })
+              
+              segments.forEach(segment => {
+                mapInstanceRef.current.geoObjects.add(segment)
+              })
+              
+              placemarks.forEach(placemark => {
+                placemark.events.remove('click')
+                const collapseHandler = function() {
+                  console.log('Collapsing expanded road')
+                  
+                  placemarks.forEach((pm, index) => {
+                    if (index !== middleIndex) {
+                      mapInstanceRef.current.geoObjects.remove(pm)
+                    }
+                  })
+                  
+                  segments.forEach(segment => {
+                    mapInstanceRef.current.geoObjects.remove(segment)
+                  })
+                  
+                  if (middlePlacemark) {
+                    middlePlacemark.events.remove('click')
+                    middlePlacemark.events.add('click', expandHandler)
+                  }
+                }
+                placemark.events.add('click', collapseHandler)
+              })
+            }
+            
+            middlePlacemark.events.add('click', expandHandler)
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Error loading roads:', error)
+    }
+  }
+
+  const sortRoadPoints = (points: RoadPoint[]): RoadPoint[] => {
+    const startPoint = points.find(p => p.parentPointId === null)
+    if (!startPoint) return points
+    
+    const sortedPoints = [startPoint]
+    let currentPointId = startPoint.id
+    
+    while (sortedPoints.length < points.length) {
+      const nextPoint = points.find(p => p.parentPointId === currentPointId)
+      if (!nextPoint) break
+      
+      sortedPoints.push(nextPoint)
+      currentPointId = nextPoint.id
+    }
+    
+    return sortedPoints
+  }
+
   const handleCloseCard = (): void => {
     setSelectedPlace(null)
   }
@@ -227,10 +393,27 @@ const MapPage: React.FC = () => {
     }
   }
 
-  const handleExitPathMode = (): void => {
+  const handleExitPathMode = async (): Promise<void> => {
     console.log('Exiting path mode')
     
     if (currentPolylineRef.current && pathCoordsRef.current.length > 1) {
+      try {
+        const points: CreateRoadPointDto[] = pathCoordsRef.current.map((coords, index) => ({
+          latitude: coords[0],
+          longitude: coords[1],
+          type: pathPointTypesRef.current[index] === PointType.BAD_ROAD ? 'Bad' : 
+                pathPointTypesRef.current[index] === PointType.STAIRS ? 'Stairs' : 'Normal'
+        }))
+
+        await createRoad({
+          rating: 5,
+          points: points
+        })
+        console.log('Road created successfully')
+      } catch (error) {
+        console.error('Error creating road:', error)
+      }
+
       const middleIndex = Math.floor(pathPlacemarksRef.current.length / 2)
       
       pathPlacemarksRef.current.forEach((placemark, index) => {
@@ -501,6 +684,7 @@ const MapPage: React.FC = () => {
         <PlacemarkCard
           title={selectedPlace.title}
           address={selectedPlace.address}
+          spotId={selectedPlace.spotId}
           onClose={handleCloseCard}
         />
       )}
