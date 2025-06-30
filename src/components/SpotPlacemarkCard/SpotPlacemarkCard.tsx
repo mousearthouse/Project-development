@@ -10,6 +10,7 @@ import { deleteSpot } from '../../utils/api/requests/deleteSpot'
 import { addToFavorites } from '../../utils/api/requests/addToFavorites'
 import { removeFromFavorites } from '../../utils/api/requests/removeFromFavorites'
 import { getFavoriteSpots } from '../../utils/api/requests/getFavoriteSpots'
+import { getSpotRating } from '../../utils/api/requests/getSpotRating'
 import ErrorToast from '../ErrorToast/ErrorToast'
 
 interface SpotPlacemarkCardProps {
@@ -35,21 +36,49 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 10)
-    fetchCurrentRating()
     if (isAuthenticated) {
+      fetchCurrentRating()
       checkIfFavorite()
+    } else {
+      fetchBasicSpotInfo()
     }
   }, [spotId])
 
-  const fetchCurrentRating = async () => {
+  const fetchBasicSpotInfo = async () => {
     try {
-      const response = await getSpots()
-      const spot = response.data.find(s => s.id === spotId)
+      const spotsResponse = await getSpots()
+      const spot = spotsResponse.data.find(s => s.id === spotId)
       if (spot) {
         setCurrentRating(spot.rating)
+        setRating(spot.rating)
         if (spot.fileId) {
           setSpotFileId(spot.fileId)
         }
+      }
+    } catch (error) {
+      console.error('Error fetching basic spot info:', error)
+      setShowError(true)
+    }
+  }
+
+  const fetchCurrentRating = async () => {
+    try {
+      const response = await getSpotRating(spotId)
+      console.log('Spot rating response:', response.data)
+      
+      if (response.data && response.data.rating !== undefined) {
+        const ratingValue = response.data.rating
+        console.log('Setting rating to:', ratingValue)
+        setCurrentRating(ratingValue)
+        setRating(ratingValue)
+      } else {
+        console.log('No rating data received')
+      }
+      
+      const spotsResponse = await getSpots()
+      const spot = spotsResponse.data.find(s => s.id === spotId)
+      if (spot && spot.fileId) {
+        setSpotFileId(spot.fileId)
       }
     } catch (error) {
       console.error('Error fetching spot rating:', error)
@@ -68,6 +97,11 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
   }
 
   const handleStarClick = async (starIndex: number): Promise<void> => {
+    if (!isAuthenticated) {
+      console.log('User not authenticated, cannot rate')
+      return
+    }
+
     const newRating = starIndex + 1
     setRating(newRating)
     
@@ -201,9 +235,9 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
               {[...Array(5)].map((_, index) => (
                 <button
                   key={index}
-                  className={`star ${index < rating ? 'filled' : ''} ${isSubmitting ? 'disabled' : ''}`}
+                  className={`star ${index < rating ? 'filled' : ''} ${isSubmitting ? 'disabled' : ''} ${!isAuthenticated ? 'disabled' : ''}`}
                   onClick={() => handleStarClick(index)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isAuthenticated}
                 >
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                     <path 
@@ -216,10 +250,13 @@ const SpotPlacemarkCard: React.FC<SpotPlacemarkCardProps> = ({ title, address, s
             </div>
             
             {isSubmitting && <div className="rating-status">Отправка оценки...</div>}
+            {!isAuthenticated && <div className="rating-status">Войдите, чтобы оценить спот</div>}
             
-            <button className="write-review-button" onClick={handleWriteReview}>
-              Написать отзыв
-            </button>
+            {isAuthenticated && (
+              <button className="write-review-button" onClick={handleWriteReview}>
+                Написать отзыв
+              </button>
+            )}
           </div>
         </div>
       </div>

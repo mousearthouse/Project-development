@@ -15,6 +15,8 @@ import { getMyRoads, type MyRoad } from '@/utils/api/requests/getMyRoads';
 import { getFavoriteSpots } from '@/utils/api/requests/getFavoriteSpots';
 import { getSpots, type Spot } from '@/utils/api/requests/spots/getSpots';
 import { removeFromFavorites } from '@/utils/api/requests/removeFromFavorites';
+import { addToFavorites } from '@/utils/api/requests/addToFavorites';
+import { getSpotRating } from '@/utils/api/requests/getSpotRating';
 
 
 interface UserProfile {
@@ -39,6 +41,8 @@ const ProfilePage: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [rating, setRating] = useState<number>(0);
     const [ratingMap, setRatingMap] = useState<{ [spotId: string]: number }>({});
+    const [spotRatings, setSpotRatings] = useState<{ [spotId: string]: number }>({});
+    const [spotFavorites, setSpotFavorites] = useState<{ [spotId: string]: boolean }>({});
     const [expandedSpots, setExpandedSpots] = useState<{ [spotId: string]: boolean }>({});
     const [expandedRoads, setExpandedRoads] = useState<{ [roadId: string]: boolean }>({});
 
@@ -62,6 +66,35 @@ const ProfilePage: React.FC = () => {
       try {
         const response = await getMySpots();
         setSpots(response.data);
+        
+        // Fetch ratings and favorites for each spot
+        const ratings: { [spotId: string]: number } = {};
+        const favorites: { [spotId: string]: boolean } = {};
+        
+        // Get favorite spots to check which ones are favorited
+        const favoriteResponse = await getFavoriteSpots();
+        const favoriteSpotIds = favoriteResponse.data.map(spot => spot.id);
+        
+        for (const spot of response.data) {
+          try {
+            const ratingResponse = await getSpotRating(spot.id);
+            if (ratingResponse.data && ratingResponse.data.rating !== undefined) {
+              ratings[spot.id] = ratingResponse.data.rating;
+            } else {
+              ratings[spot.id] = spot.rating;
+            }
+            
+            favorites[spot.id] = favoriteSpotIds.includes(spot.id);
+          } catch (error) {
+            console.error(`Error fetching data for spot ${spot.id}:`, error);
+            ratings[spot.id] = spot.rating;
+            favorites[spot.id] = false;
+          }
+        }
+        
+        setSpotRatings(ratings);
+        setSpotFavorites(favorites);
+        
         setShowSpots(true);
         setShowRoads(false); 
         setShowFavorites(false); 
@@ -99,6 +132,12 @@ const ProfilePage: React.FC = () => {
     const handleStarClick = async (spotId: string, starIndex: number): Promise<void> => {
   const newRating = starIndex + 1;
 
+  // Immediately update visual rating
+  setSpotRatings((prev) => ({
+    ...prev,
+    [spotId]: newRating,
+  }));
+
   setRatingMap((prev) => ({
     ...prev,
     [spotId]: newRating,
@@ -113,6 +152,11 @@ const ProfilePage: React.FC = () => {
     console.log('Рейтинг отправлен');
   } catch (error) {
     console.error('Ошибка при отправке рейтинга:', error);
+    // Revert visual rating on error
+    setSpotRatings((prev) => ({
+      ...prev,
+      [spotId]: prev[spotId] || 0,
+    }));
     setRatingMap((prev) => ({
       ...prev,
       [spotId]: 0,
@@ -153,6 +197,27 @@ const toggleExpandRoad = (roadId: string) => {
         );
       } catch (error) {
         console.error('Ошибка при удалении из избранного:', error);
+      }
+    };
+
+    const handleSpotFavoriteClick = async (spotId: string) => {
+      try {
+        const isFavorite = spotFavorites[spotId];
+        
+        if (isFavorite) {
+          await removeFromFavorites(spotId);
+          console.log('Убрано из избранного');
+        } else {
+          await addToFavorites(spotId);
+          console.log('Добавлено в избранное');
+        }
+        
+        setSpotFavorites(prev => ({
+          ...prev,
+          [spotId]: !isFavorite
+        }));
+      } catch (error) {
+        console.error('Ошибка при обновлении избранного:', error);
       }
     };
 
@@ -262,7 +327,8 @@ const toggleExpandRoad = (roadId: string) => {
                               <img
                                 src={favoritesIcon}
                                 alt="Избранное"
-                                className="favorite-icon"
+                                className={`favorite-icon clickable ${spotFavorites[spot.id] ? 'active' : ''}`}
+                                onClick={() => handleSpotFavoriteClick(spot.id)}
                               />
                             </>
                           ) : (
@@ -270,7 +336,8 @@ const toggleExpandRoad = (roadId: string) => {
                               <img
                                 src={favoritesIcon}
                                 alt="Избранное"
-                                className="favorite-icon no-photo-favorite"
+                                className={`favorite-icon no-photo-favorite clickable ${spotFavorites[spot.id] ? 'active' : ''}`}
+                                onClick={() => handleSpotFavoriteClick(spot.id)}
                               />
                             </>
                           )}
@@ -296,7 +363,7 @@ const toggleExpandRoad = (roadId: string) => {
                           <div className="rating-label">Оцените этот спот:</div>
                           <div className="stars">
                             {[...Array(5)].map((_, index) => {
-                              const currentRating = ratingMap[spot.id] ?? spot.rating;
+                              const currentRating = spotRatings[spot.id] ?? spot.rating;
                               return (
                                 <button
                                   key={index}
@@ -336,7 +403,7 @@ const toggleExpandRoad = (roadId: string) => {
                                 <img
                                   src={favoritesIcon}
                                   alt="Избранное"
-                                  className="favorite-icon clickable"
+                                  className="favorite-icon clickable active"
                                   onClick={() => handleRemoveFromFavorites(spot.id)}
                                 />
                               </>
@@ -345,7 +412,7 @@ const toggleExpandRoad = (roadId: string) => {
                                 <img
                                   src={favoritesIcon}
                                   alt="Избранное"
-                                  className="favorite-icon no-photo-favorite clickable"
+                                  className="favorite-icon no-photo-favorite clickable active"
                                   onClick={() => handleRemoveFromFavorites(spot.id)}
                                 />
                               </>
